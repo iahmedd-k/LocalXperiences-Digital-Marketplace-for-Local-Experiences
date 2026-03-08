@@ -1,5 +1,3 @@
-
-
 const express  = require('express');
 const cors     = require('cors');
 const helmet   = require('helmet');
@@ -17,7 +15,7 @@ app.use(helmet());
 const allowedOrigins = [
   process.env.CLIENT_URL,
   'http://localhost:5173',
-'https://local-xperiences.vercel.app/',
+  'https://local-xperiences.vercel.app',
   'http://localhost:5175',
   'http://localhost:5176',
   'http://localhost:5177',
