@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Satoshi', sans-serif;
+    color: #111827;
+    background: #ffffff;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: 'Clash Display', sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-clash   { font-family: 'Clash Display', sans-serif; }
+  .font-satoshi { font-family: 'Satoshi', sans-serif; }
+}
+
+/* Leaflet map z-index fix */
+.leaflet-container { z-index: 1; }
+.leaflet-pane      { z-index: 1; }

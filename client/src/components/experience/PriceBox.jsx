@@ -1,0 +1,83 @@
+import { useState }       from 'react'
+import { Link }           from 'react-router-dom'
+import { useSelector }    from 'react-redux'
+import { formatPrice }    from '../../utils/formatters.js'
+import StarRating         from '../common/StarRating.jsx'
+import AvailabilityPicker from './AvailabilityPicker.jsx'
+import Button             from '../common/Button.jsx'
+import AddToItinerary     from '../itinerary/AddToItinerary.jsx'
+
+const PriceBox = ({ experience }) => {
+  const { isAuthenticated } = useSelector((s) => s.auth)
+  const [guests,   setGuests]   = useState(1)
+  const [selected, setSelected] = useState(null)
+
+  const total = experience.price * guests
+
+  return (
+    <div className="sticky top-24 border border-gray-200 rounded-2xl p-5 shadow-lg">
+      {/* Price */}
+      <div className="flex items-end justify-between mb-1">
+        <div>
+          <span className="font-clash text-3xl font-bold text-orange-500">{formatPrice(experience.price)}</span>
+          <span className="text-gray-400 text-sm"> / person</span>
+        </div>
+        <StarRating rating={experience.rating?.average} count={experience.rating?.count} />
+      </div>
+
+      <div className="border-t border-gray-100 my-4"/>
+
+      {/* Availability picker */}
+      <AvailabilityPicker
+        availability={experience.availability}
+        selected={selected}
+        onSelect={setSelected}
+      />
+
+      <div className="border-t border-gray-100 my-4"/>
+
+      {/* Guests */}
+      <div className="flex items-center justify-between mb-5">
+        <p className="text-sm font-semibold text-gray-700">Guests</p>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setGuests(Math.max(1, guests - 1))}
+            className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition">−</button>
+          <span className="font-bold text-gray-900 w-4 text-center">{guests}</span>
+          <button onClick={() => setGuests(Math.min(experience.groupSize?.max || 10, guests + 1))}
+            className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition">+</button>
+        </div>
+      </div>
+
+      {/* Total */}
+      <div className="flex items-center justify-between mb-4 bg-orange-50 rounded-xl p-3">
+        <span className="text-sm font-semibold text-gray-700">Total</span>
+        <span className="font-clash font-bold text-orange-500 text-lg">{formatPrice(total)}</span>
+      </div>
+
+      {/* Save to itinerary (only when logged in; component handles auth) */}
+      <div className="mb-3">
+        <AddToItinerary experienceId={experience._id} />
+      </div>
+
+      {/* Book button */}
+      {isAuthenticated ? (
+        <Link
+          to={`/checkout/${experience._id}?slot=${selected?._id || ''}&guests=${guests}`}
+          className={`block ${!selected ? 'pointer-events-none opacity-50' : ''}`}
+        >
+          <Button fullWidth size="lg">
+            {selected ? 'Reserve Now' : 'Select a Date First'}
+          </Button>
+        </Link>
+      ) : (
+        <Link to="/login">
+          <Button fullWidth size="lg">Sign In to Book</Button>
+        </Link>
+      )}
+
+      <p className="text-center text-xs text-gray-400 mt-3">No charge until confirmation</p>
+    </div>
+  )
+}
+
+export default PriceBox
