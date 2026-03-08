@@ -25,6 +25,9 @@ const SignupPage = () => {
       const { data } = await signup(form)
       dispatch(setCredentials({ user: data.data.user, token: data.data.token }))
       toast.success(`Welcome to LocalXperiences, ${data.data.user.name.split(' ')[0]}!`)
+      if (import.meta.env.DEV) {
+        toast('If you do not receive a welcome email, please check your spam folder. (Dev mode)', { icon: '✉️' })
+      }
       navigate('/')
     } catch (err) {
       toast.error(getErrorMessage(err))
@@ -38,6 +41,12 @@ const SignupPage = () => {
       {/* Left — Form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
+          {import.meta.env.DEV && (
+            <div className="mb-4 text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded p-2 text-center">
+              If you do not receive a welcome email, check your spam folder.
+            </div>
+          )}
+
           <Link to="/" className="font-clash text-2xl font-bold text-gray-900 block mb-8">
             Local<span className="text-orange-500">X</span>periences
           </Link>

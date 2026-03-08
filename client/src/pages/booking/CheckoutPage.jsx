@@ -84,19 +84,19 @@ const CheckoutForm = ({ experience, slotId, guests, clientSecret, paymentIntentI
       {/* Experience summary */}
       <div className="border border-gray-100 rounded-2xl p-5">
         <h3 className="font-clash font-bold text-gray-900 mb-3">Booking Summary</h3>
-        <div className="flex gap-4">
-          <div className="w-20 h-20 bg-orange-100 rounded-xl flex items-center justify-center text-3xl flex-shrink-0 overflow-hidden">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="w-full sm:w-20 h-20 bg-orange-100 rounded-xl flex items-center justify-center text-3xl flex-shrink-0 overflow-hidden">
             {experience.photos?.[0]
               ? <img src={experience.photos[0]} alt="" className="w-full h-full object-cover rounded-xl"/>
               : '🌍'}
           </div>
-          <div>
+          <div className="flex-1">
             <p className="font-semibold text-gray-900 leading-snug">{experience.title}</p>
             <p className="text-sm text-gray-500 mt-1">{experience.location?.city} · {formatDuration(experience.duration)}</p>
             <p className="text-sm text-gray-500">{guests} guest{guests > 1 ? 's' : ''}</p>
           </div>
         </div>
-        <div className="border-t border-gray-100 mt-4 pt-4 flex justify-between">
+        <div className="border-t border-gray-100 mt-4 pt-4 flex flex-col sm:flex-row justify-between gap-2">
           <span className="text-sm text-gray-600">{formatPrice(experience.price)} × {guests} guests</span>
           <span className="font-clash font-bold text-orange-500 text-lg">{formatPrice(total)}</span>
         </div>

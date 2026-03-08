@@ -199,7 +199,24 @@ const createExperience = async (req, res, next) => {
       tags, price, duration, groupSize, availability,
     } = req.body;
 
-    const parsedLocation = typeof location === 'string' ? JSON.parse(location) : location;
+    let parsedLocation = {};
+    try {
+      parsedLocation = typeof location === 'string' ? JSON.parse(location) : (location || {});
+    } catch {
+      parsedLocation = {};
+    }
+        // Merge flat location fields from FormData into parsedLocation
+        if (req.body['location.city']) parsedLocation.city = req.body['location.city'];
+        if (req.body['location.address']) parsedLocation.address = req.body['location.address'];
+        if (req.body['location.country']) parsedLocation.country = req.body['location.country'];
+    // If coordinatesHint is sent as a flat field (FormData), merge it in
+    if (req.body['location.coordinatesHint']) {
+      try {
+        parsedLocation.coordinatesHint = JSON.parse(req.body['location.coordinatesHint']);
+      } catch {
+        // ignore parse error, treat as missing
+      }
+    }
 
     // ── Geocode address to lat/lng ─────────────────────────────────────────
     // Prefer explicit coordinates from frontend hint when provided.

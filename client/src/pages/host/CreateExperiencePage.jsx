@@ -112,7 +112,13 @@ const CreateExperiencePage = () => {
       fd.append('category', form.category)
       fd.append('price', String(form.price))
       fd.append('duration', String(form.duration))
-      fd.append('location', JSON.stringify(form.location))
+      // Append location fields individually for backend validation
+      fd.append('location.city', form.location.city)
+      fd.append('location.address', form.location.address)
+      fd.append('location.country', form.location.country)
+      if (form.location.coordinatesHint) {
+        fd.append('location.coordinatesHint', JSON.stringify(form.location.coordinatesHint))
+      }
       fd.append('groupSize', JSON.stringify(form.groupSize))
       fd.append('availability', JSON.stringify(form.availability))
       fd.append('tags', JSON.stringify(tagsArray))

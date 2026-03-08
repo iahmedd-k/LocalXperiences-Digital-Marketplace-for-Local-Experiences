@@ -42,8 +42,15 @@ const experienceValidator = [
   body('duration')
     .notEmpty().withMessage('Duration is required')
     .isNumeric().withMessage('Duration must be a number'),
-  body('location.city')
-    .notEmpty().withMessage('City is required'),
+  body().custom((value, { req }) => {
+    // Support both JSON and multipart/form-data
+    const city = req.body['location.city'] || (req.body.location && req.body.location.city);
+    const address = req.body['location.address'] || (req.body.location && req.body.location.address);
+    if (!city && !address) {
+      throw new Error('Either city or address is required');
+    }
+    return true;
+  }),
 ];
 
 // ─── Booking Validators ────────────────────────────────────────────────────

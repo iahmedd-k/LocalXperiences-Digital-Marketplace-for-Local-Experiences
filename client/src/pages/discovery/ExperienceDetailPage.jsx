@@ -12,6 +12,7 @@ import ReviewList          from '../../components/reviews/ReviewList.jsx'
 import ReviewForm          from '../../components/reviews/ReviewForm.jsx'
 import QnAList             from '../../components/qna/QnAList.jsx'
 import ExperienceMap       from '../../components/map/ExperienceMap.jsx'
+import { CITY_COORDS }     from '../../components/map/ExperienceMap.jsx'
 import Badge               from '../../components/common/Badge.jsx'
 import { formatDuration }  from '../../utils/formatters.js'
 import { CATEGORIES }      from '../../config/constants.js'
@@ -38,7 +39,9 @@ const ExperienceDetailPage = () => {
   )
 
   const catLabel = CATEGORIES.find((c) => c.value === exp.category)?.label || exp.category
-  const coords   = exp.location?.coordinates?.coordinates
+  // Always use city center for map area, not pinpoint
+  const cityKey = exp.location?.city?.toLowerCase().trim()
+  const areaCenter = CITY_COORDS[cityKey] || [30.3753, 69.3451] // Default: Pakistan center
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -62,7 +65,7 @@ const ExperienceDetailPage = () => {
               <Badge variant="orange">{catLabel}</Badge>
               <span className="flex items-center gap-1 text-sm text-gray-500">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                {exp.location?.city}{exp.location?.country ? `, ${exp.location.country}` : ''}
+                  {exp.location?.address || 'Location not specified'}
               </span>
               <span className="flex items-center gap-1 text-sm text-gray-500">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -118,19 +121,17 @@ const ExperienceDetailPage = () => {
             {/* Host */}
             <ExperienceHost host={exp.hostId} />
 
-            {/* Map */}
-            {coords && coords[0] !== 0 && (
-              <section>
-                <h2 className="font-clash text-xl font-bold text-gray-900 mb-3">Location</h2>
-                <div className="h-56 rounded-2xl overflow-hidden border border-gray-100">
-                  <ExperienceMap
-                    experiences={[exp]}
-                    center={[coords[1], coords[0]]}
-                  />
-                </div>
-                <p className="text-sm text-gray-500 mt-2">{exp.location?.address}</p>
-              </section>
-            )}
+            {/* Map (area only, no marker) */}
+            <section>
+              <h2 className="font-clash text-xl font-bold text-gray-900 mb-3">Location</h2>
+              <div className="h-56 rounded-2xl overflow-hidden border border-gray-100">
+                <ExperienceMap
+                  experiences={[]}
+                  center={areaCenter}
+                />
+              </div>
+                <p className="text-sm text-gray-500 mt-2">{exp.location?.address || 'Location not specified'}</p>
+            </section>
 
             {/* Reviews */}
             <section>

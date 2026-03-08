@@ -1,9 +1,11 @@
 import { useQuery }        from '@tanstack/react-query'
 import { Link }            from 'react-router-dom'
 import { useSelector }     from 'react-redux'
-import { getHostExperiences }  from '../../services/experienceService.js'
+import { useState }        from 'react'
+import { getHostExperiences, deleteExperience }  from '../../services/experienceService.js'
 import { getHostBookings }     from '../../services/bookingService.js'
 import { getHostReviews }      from '../../services/reviewService.js'
+import toast from 'react-hot-toast'
 import Navbar              from '../../components/common/Navbar.jsx'
 import Footer              from '../../components/common/Footer.jsx'
 import Spinner             from '../../components/common/Spinner.jsx'
@@ -30,11 +32,25 @@ const StatCard = ({ icon, label, value, sub, color = 'orange' }) => {
 
 const HostDashboardPage = () => {
   const { user } = useSelector((s) => s.auth)
+  const [deletingId, setDeletingId] = useState(null)
 
   const { data: experiences = [], isLoading: expLoading } = useQuery({
     queryKey: ['hostExperiences'],
     queryFn:  () => getHostExperiences().then((r) => r.data.data),
   })
+  
+  const handleDelete = async (id) => {
+    setDeletingId(id)
+    try {
+      await deleteExperience(id)
+      toast.success('Experience deleted')
+      refetch()
+    } catch (err) {
+      toast.error('Failed to delete experience')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const { data: bookingsData, isLoading: bookLoading } = useQuery({
     queryKey: ['hostBookings'],
@@ -168,6 +184,12 @@ const HostDashboardPage = () => {
                             className="text-xs text-gray-400 hover:text-orange-500 transition p-1">✏️</Link>
                           <Link to={`/experiences/${exp._id}`}
                             className="text-xs text-gray-400 hover:text-orange-500 transition p-1">👁️</Link>
+                          <button
+                            className={`text-xs text-gray-400 hover:text-red-500 transition p-1 ${deletingId === exp._id ? 'opacity-50 pointer-events-none' : ''}`}
+                            title="Delete Experience"
+                            onClick={() => handleDelete(exp._id)}
+                            disabled={deletingId === exp._id}
+                          >🗑️</button>
                         </div>
                       </div>
                     ))}

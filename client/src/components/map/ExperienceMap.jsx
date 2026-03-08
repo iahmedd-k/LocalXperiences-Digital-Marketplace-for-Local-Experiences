@@ -5,7 +5,7 @@ import L from 'leaflet'
 import { formatPrice } from '../../utils/formatters.js'
 
 // City fallback coordinates for when geocoding fails/returns [0,0]
-const CITY_COORDS = {
+export const CITY_COORDS = {
   lahore:    [31.5497, 74.3436],
   karachi:   [24.8607, 67.0011],
   islamabad: [33.6844, 73.0479],

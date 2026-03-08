@@ -16,7 +16,7 @@ const BookingCard = ({ booking, onCancel }) => {
       : 0
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 flex flex-col sm:flex-row gap-4">
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 flex flex-col sm:flex-row gap-4 w-full">
       {/* Thumbnail */}
       <div className="w-full sm:w-28 h-28 bg-orange-100 rounded-xl flex items-center justify-center text-3xl overflow-hidden flex-shrink-0">
         {exp?.photos?.[0]
@@ -27,7 +27,7 @@ const BookingCard = ({ booking, onCancel }) => {
       {/* Info */}
       <div className="flex-1 flex flex-col justify-between">
         <div>
-          <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-1">
             <Link to={`/experiences/${exp?._id}`} className="font-clash font-bold text-gray-900 hover:text-orange-500 transition leading-snug">
               {exp?.title}
             </Link>
