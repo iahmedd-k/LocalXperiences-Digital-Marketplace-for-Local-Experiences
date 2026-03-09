@@ -1,6 +1,9 @@
 // Format price → "$24"
-export const formatPrice = (price) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(price)
+export const formatPrice = (price) => {
+  const num = Number(price)
+  if (!Number.isFinite(num)) return '$0'
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num)
+}
 
 // Format duration → "2h 30m"
 export const formatDuration = (minutes) => {

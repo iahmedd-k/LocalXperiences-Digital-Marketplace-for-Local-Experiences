@@ -1,13 +1,14 @@
 import { useState }       from 'react'
 import { Link }           from 'react-router-dom'
 import { useSelector }    from 'react-redux'
+import toast              from 'react-hot-toast'
 import { formatPrice }    from '../../utils/formatters.js'
 import StarRating         from '../common/StarRating.jsx'
 import AvailabilityPicker from './AvailabilityPicker.jsx'
 import Button             from '../common/Button.jsx'
 import AddToItinerary     from '../itinerary/AddToItinerary.jsx'
 
-const PriceBox = ({ experience }) => {
+const PriceBox = ({ experience, alreadyBooked = false }) => {
   const { isAuthenticated } = useSelector((s) => s.auth)
   const [guests,   setGuests]   = useState(1)
   const [selected, setSelected] = useState(null)
@@ -61,14 +62,26 @@ const PriceBox = ({ experience }) => {
 
       {/* Book button */}
       {isAuthenticated ? (
-        <Link
-          to={`/checkout/${experience._id}?slot=${selected?._id || ''}&guests=${guests}`}
-          className={`block ${!selected ? 'pointer-events-none opacity-50' : ''}`}
-        >
-          <Button fullWidth size="lg">
-            {selected ? 'Reserve Now' : 'Select a Date First'}
-          </Button>
-        </Link>
+        alreadyBooked ? (
+          <button
+            type="button"
+            onClick={() => toast.error('You already booked this experience.')}
+            className="block w-full"
+          >
+            <Button fullWidth size="lg" variant="secondary" disabled>
+              Already Booked
+            </Button>
+          </button>
+        ) : (
+          <Link
+            to={`/checkout/${experience._id}?slot=${selected?._id || ''}&guests=${guests}`}
+            className={`block ${!selected ? 'pointer-events-none opacity-50' : ''}`}
+          >
+            <Button fullWidth size="lg">
+              {selected ? 'Reserve Now' : 'Select a Date First'}
+            </Button>
+          </Link>
+        )
       ) : (
         <Link to="/login">
           <Button fullWidth size="lg">Sign In to Book</Button>

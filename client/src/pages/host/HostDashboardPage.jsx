@@ -62,10 +62,20 @@ const HostDashboardPage = () => {
     queryFn:  () => getHostReviews().then((r) => r.data.data),
   })
 
-  const bookings     = bookingsData?.data || []
-  const totalRevenue = bookings.filter((b) => b.status === 'confirmed' || b.status === 'completed')
-                                .reduce((sum, b) => sum + (b.totalPrice || 0), 0)
-  const avgRating    = reviews.length
+  const bookings = bookingsData?.data || []
+
+  const getBookingTotal = (b) =>
+    typeof b.amount === 'number'
+      ? b.amount / 100
+      : typeof b.totalPrice === 'number'
+        ? b.totalPrice
+        : 0
+
+  const totalRevenue = bookings
+    .filter((b) => b.status === 'confirmed' || b.status === 'completed')
+    .reduce((sum, b) => sum + getBookingTotal(b), 0)
+
+  const avgRating = reviews.length
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
     : '—'
 
@@ -146,7 +156,7 @@ const HostDashboardPage = () => {
                           <p className="text-xs text-gray-400 truncate">{b.experienceId?.title}</p>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-bold text-orange-500">{formatPrice(b.totalPrice)}</p>
+                          <p className="text-sm font-bold text-orange-500">{formatPrice(getBookingTotal(b))}</p>
                           <Badge variant={b.status === 'confirmed' ? 'green' : b.status === 'pending' ? 'yellow' : b.status === 'cancelled' ? 'red' : 'blue'} className="capitalize text-xs">{b.status}</Badge>
                         </div>
                       </div>

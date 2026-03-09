@@ -23,6 +23,13 @@ const HostBookingsPage = () => {
 
   const bookings = res?.data || []
 
+  const getBookingTotal = (b) =>
+    typeof b.amount === 'number'
+      ? b.amount / 100
+      : typeof b.totalPrice === 'number'
+        ? b.totalPrice
+        : 0
+
   const filtered = bookings
     .filter((b) => tab === 'all' || b.status === tab)
     .filter((b) => !search || b.userId?.name?.toLowerCase().includes(search.toLowerCase()) || b.experienceId?.title?.toLowerCase().includes(search.toLowerCase()))
@@ -103,10 +110,10 @@ const HostBookingsPage = () => {
                 </div>
 
                 {/* Guests */}
-                <div className="col-span-2 text-sm text-gray-600">{b.guests} guest{b.guests > 1 ? 's' : ''}</div>
+                <div className="col-span-2 text-sm text-gray-600">{(b.guestCount ?? b.guests) || 0} guest{((b.guestCount ?? b.guests) || 0) > 1 ? 's' : ''}</div>
 
                 {/* Total */}
-                <div className="col-span-2 text-sm font-bold text-orange-500">{formatPrice(b.totalPrice)}</div>
+                <div className="col-span-2 text-sm font-bold text-orange-500">{formatPrice(getBookingTotal(b))}</div>
 
                 {/* Status */}
                 <div className="col-span-2">
@@ -125,7 +132,7 @@ const HostBookingsPage = () => {
               Total revenue: {formatPrice(
                 filtered
                   .filter((b) => b.status === 'confirmed' || b.status === 'completed')
-                  .reduce((s, b) => s + (b.totalPrice || 0), 0)
+                  .reduce((s, b) => s + getBookingTotal(b), 0)
               )}
             </span>
           </div>

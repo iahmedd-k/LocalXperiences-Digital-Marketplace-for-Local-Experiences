@@ -1,7 +1,9 @@
 import { useState }        from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { useSelector }     from 'react-redux'
 import { useQuery }        from '@tanstack/react-query'
 import { getExperienceById } from '../../services/experienceService.js'
+import { getMyBookings }   from '../../services/bookingService.js'
 import Navbar              from '../../components/common/Navbar.jsx'
 import Footer              from '../../components/common/Footer.jsx'
 import Spinner             from '../../components/common/Spinner.jsx'
@@ -19,12 +21,29 @@ import { CATEGORIES }      from '../../config/constants.js'
 
 const ExperienceDetailPage = () => {
   const { id } = useParams()
+  const { isAuthenticated } = useSelector((s) => s.auth)
   const [reviewKey, setReviewKey] = useState(0)
 
   const { data: exp, isLoading } = useQuery({
     queryKey: ['experience', id],
     queryFn:  () => getExperienceById(id).then((r) => r.data.data),
   })
+
+  const { data: myBookings = [] } = useQuery({
+    queryKey: ['myBookings'],
+    queryFn:  () => getMyBookings().then((r) => r.data.data),
+    enabled: isAuthenticated,
+  })
+
+  const myBooking = exp
+    ? myBookings.find((b) => {
+        const bookedExpId = b.experienceId?._id || b.experienceId
+        return String(bookedExpId) === String(exp._id)
+      })
+    : null
+
+  const bookingId = exp?.myBookingId || myBooking?._id
+  const hasBooking = Boolean(bookingId)
 
   if (isLoading) return (
     <div className="min-h-screen flex flex-col"><Navbar /><Spinner size="lg" className="flex-1" /></div>
@@ -138,8 +157,8 @@ const ExperienceDetailPage = () => {
               <ReviewList experienceId={id} rating={exp.rating} />
               <div className="mt-5">
                 {/* Only show ReviewForm if user has a valid booking for this experience */}
-                {exp.myBookingId ? (
-                  <ReviewForm bookingId={exp.myBookingId} experienceId={id} onSuccess={() => setReviewKey(k => k+1)} />
+                {hasBooking ? (
+                  <ReviewForm bookingId={bookingId} experienceId={id} onSuccess={() => setReviewKey(k => k+1)} />
                 ) : (
                   <div className="border border-gray-100 rounded-2xl p-5 bg-gray-50 text-center">
                     <h4 className="font-bold text-gray-900 mb-3">Leave a Review</h4>
@@ -158,7 +177,7 @@ const ExperienceDetailPage = () => {
 
           {/* Right column — Price box */}
           <div className="lg:col-span-1">
-            <PriceBox experience={exp} />
+            <PriceBox experience={exp} alreadyBooked={hasBooking} />
           </div>
         </div>
       </div>
