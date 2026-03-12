@@ -4,7 +4,7 @@ const ExperienceGallery = ({ photos = [], title }) => {
   const [active, setActive] = useState(0)
 
   if (!photos.length) return (
-    <div className="w-full h-72 md:h-96 bg-gradient-to-br from-orange-100 to-orange-200 rounded-2xl flex items-center justify-center text-6xl">🌍</div>
+    <div className="w-full h-72 md:h-96 bg-gradient-to-br from-[#E8F8F2] to-[#C6F0DC] rounded-2xl flex items-center justify-center text-6xl">🌍</div>
   )
 
   return (
@@ -21,7 +21,7 @@ const ExperienceGallery = ({ photos = [], title }) => {
               key={i} src={p} alt={`${title} ${i+1}`}
               onClick={() => setActive(i)}
               className={`h-16 w-24 flex-shrink-0 object-cover rounded-lg cursor-pointer border-2 transition
-                ${active === i ? 'border-orange-500' : 'border-transparent hover:border-gray-300'}`}
+                ${active === i ? 'border-[#00AA6C]' : 'border-transparent hover:border-[#E8F5EE]'}`}
             />
           ))}
         </div>

@@ -3,7 +3,6 @@ const cors     = require('cors');
 const helmet   = require('helmet');
 const passport = require('./config/passport');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
-const { globalRateLimiter }      = require('./middleware/rateLimiter');
 require('dotenv').config();
 
 const app = express();
@@ -39,9 +38,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // ─── Passport ─────────────────────────────────────────────────────────────
 app.use(passport.initialize());
-
-// ─── Rate Limiting ─────────────────────────────────────────────────────────
-app.use('/api', globalRateLimiter);
 
 // ─── Health Check ──────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {

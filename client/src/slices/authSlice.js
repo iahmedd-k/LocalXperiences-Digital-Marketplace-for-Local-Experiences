@@ -3,9 +3,9 @@ import { createSlice } from '@reduxjs/toolkit'
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user:            null,
-    token:           null,
-    isAuthenticated: false,
+    user:            { _id: 'demo-user-123', name: 'Demo User', email: 'demo@example.com', role: 'traveler', avatar: 'https://i.pravatar.cc/150?u=demo' },
+    token:           'demo-token-xyz',
+    isAuthenticated: true,
   },
   reducers: {
     setCredentials(state, { payload }) {

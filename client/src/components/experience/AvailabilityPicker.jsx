@@ -21,8 +21,8 @@ const AvailabilityPicker = ({ availability = [], onSelect, selected }) => {
               onClick={() => onSelect(slot)}
               className={`flex items-center justify-between p-3 rounded-xl border-2 text-sm transition
                 ${isSelected
-                  ? 'border-orange-500 bg-orange-50'
-                  : 'border-gray-100 hover:border-orange-200'}`}
+                  ? 'border-[#00AA6C] bg-[#E8F8F2]'
+                  : 'border-gray-100 hover:border-[#C6F0DC]'}`}
             >
               <div className="text-left">
                 <p className="font-semibold text-gray-800">{formatShortDate(slot.date)}</p>

@@ -16,12 +16,12 @@ const PriceBox = ({ experience, alreadyBooked = false }) => {
   const total = experience.price * guests
 
   return (
-    <div className="sticky top-24 border border-gray-200 rounded-2xl p-5 shadow-lg">
+    <div className="sticky top-24 bg-white border border-[#E8F5EE] rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,40,20,0.06)]">
       {/* Price */}
-      <div className="flex items-end justify-between mb-1">
+      <div className="flex items-end justify-between mb-1" style={{ fontFamily: "'Poppins',sans-serif" }}>
         <div>
-          <span className="font-clash text-3xl font-bold text-orange-500">{formatPrice(experience.price)}</span>
-          <span className="text-gray-400 text-sm"> / person</span>
+          <span style={{ fontFamily: "'DM Serif Display',serif", fontSize: "2.2rem", color: "#0f2d1a", lineHeight: 1 }}>{formatPrice(experience.price)}</span>
+          <span className="text-gray-400 text-sm ml-1 mt-1 inline-block">/ person</span>
         </div>
         <StarRating rating={experience.rating?.average} count={experience.rating?.count} />
       </div>
@@ -50,9 +50,9 @@ const PriceBox = ({ experience, alreadyBooked = false }) => {
       </div>
 
       {/* Total */}
-      <div className="flex items-center justify-between mb-4 bg-orange-50 rounded-xl p-3">
-        <span className="text-sm font-semibold text-gray-700">Total</span>
-        <span className="font-clash font-bold text-orange-500 text-lg">{formatPrice(total)}</span>
+      <div className="flex items-center justify-between mb-4 bg-[#f0faf5] rounded-xl p-3" style={{ fontFamily: "'Poppins',sans-serif" }}>
+        <span className="text-sm font-semibold text-[#0f2d1a]">Total</span>
+        <span style={{ fontFamily: "'DM Serif Display',serif", fontSize: "1.4rem", color: "#00AA6C" }}>{formatPrice(total)}</span>
       </div>
 
       {/* Save to itinerary (only when logged in; component handles auth) */}

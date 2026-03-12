@@ -1,7 +1,7 @@
 const variants = {
-  primary:  'bg-orange-500 hover:bg-orange-600 text-white',
+  primary:  'bg-[#00AA6C] hover:bg-[#008A56] text-white',
   secondary:'bg-gray-100 hover:bg-gray-200 text-gray-800',
-  outline:  'border border-orange-500 text-orange-500 hover:bg-orange-50',
+  outline:  'border border-[#00AA6C] text-[#00AA6C] hover:bg-[#E8F8F2]',
   ghost:    'text-gray-600 hover:bg-gray-100',
   danger:   'bg-red-500 hover:bg-red-600 text-white',
 }

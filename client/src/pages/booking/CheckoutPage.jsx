@@ -85,7 +85,7 @@ const CheckoutForm = ({ experience, slotId, guests, clientSecret, paymentIntentI
       <div className="border border-gray-100 rounded-2xl p-5">
         <h3 className="font-clash font-bold text-gray-900 mb-3">Booking Summary</h3>
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="w-full sm:w-20 h-20 bg-orange-100 rounded-xl flex items-center justify-center text-3xl flex-shrink-0 overflow-hidden">
+          <div className="w-full sm:w-20 h-20 bg-[#E8F8F2] rounded-xl flex items-center justify-center text-3xl flex-shrink-0 overflow-hidden">
             {experience.photos?.[0]
               ? <img src={experience.photos[0]} alt="" className="w-full h-full object-cover rounded-xl"/>
               : '🌍'}
@@ -98,7 +98,7 @@ const CheckoutForm = ({ experience, slotId, guests, clientSecret, paymentIntentI
         </div>
         <div className="border-t border-gray-100 mt-4 pt-4 flex flex-col sm:flex-row justify-between gap-2">
           <span className="text-sm text-gray-600">{formatPrice(experience.price)} × {guests} guests</span>
-          <span className="font-clash font-bold text-orange-500 text-lg">{formatPrice(total)}</span>
+          <span className="font-clash font-bold text-[#00AA6C] text-lg">{formatPrice(total)}</span>
         </div>
       </div>
 
@@ -166,7 +166,7 @@ const CheckoutPage = () => {
   )
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-[#f0faf5]">
       <Navbar />
       <div className="max-w-xl mx-auto w-full px-4 py-10">
         <h1 className="font-clash text-3xl font-bold text-gray-900 mb-8">Complete Your Booking</h1>
