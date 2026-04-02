@@ -12,25 +12,9 @@ const app = express();
 app.use(helmet());
 
 // Allow frontend dev on common Vite ports + configured CLIENT_URL
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  'http://localhost:5173',
-  'https://local-xperiences.vercel.app',
-  'http://localhost:5175',
-  'http://localhost:5176',
-  'http://localhost:5177',
-  'http://localhost:5178',
-  "https://local-xperiences-digital-marketplac.vercel.app/",
-].filter(Boolean);
-
+// Allow all origins (for development/testing only)
 app.use(cors({
-  origin: (origin, cb) => {
-    // Allow server-to-server / curl (no origin) and known dev origins
-    if (!origin || allowedOrigins.includes(origin)) {
-      return cb(null, true);
-    }
-    return cb(null, false);
-  },
+  origin: '*',
   credentials: true,
 }));
 
