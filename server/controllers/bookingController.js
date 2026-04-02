@@ -66,14 +66,8 @@ const enforceBookingWindow = (experience, slot) => {
   if (!slotDateTime) return 'A valid slot date and time are required';
 
   const now = new Date();
-  const diffHours = (slotDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-  const diffDays = diffHours / 24;
-  const minAdvanceHours = Number(experience?.bookingSettings?.minAdvanceHours || 0);
+  const diffDays = (slotDateTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
   const maxAdvanceDays = Number(experience?.bookingSettings?.maxAdvanceDays || 365);
-
-  if (diffHours < minAdvanceHours) {
-    return `Bookings must be made at least ${minAdvanceHours} hours in advance`;
-  }
 
   if (diffDays > maxAdvanceDays) {
     return `Bookings can only be made ${maxAdvanceDays} days ahead`;

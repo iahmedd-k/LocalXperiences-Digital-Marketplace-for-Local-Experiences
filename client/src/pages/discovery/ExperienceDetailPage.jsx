@@ -234,7 +234,7 @@ const CheckInButton = ({ bookingId, isAuthenticated }) => {
 
 const ReserveCard = ({
   exp, availableSlots, dateOptions, effectiveDateKey,
-  selectedSlot, maxSelectableGuests, hasBooking, isAuthenticated, location,
+  selectedSlot, maxSelectableGuests, hasBooking, isAuthenticated, location, checkInEligibleBooking,
   averageBookAheadDays, requireAuth,
   setShowCancellationModal, setShowReserveLaterModal,
   refreshAvailability, isRefreshingAvailability, openAvailabilitySignal,
@@ -466,7 +466,7 @@ const ReserveCard = ({
                 You already have a booking for this experience.
               </div>
               {checkInEligibleBooking ? (
-                <CheckInButton bookingId={checkInEligibleBooking._id} isAuthenticated={effectiveIsAuthenticated} />
+                <CheckInButton bookingId={checkInEligibleBooking._id} isAuthenticated={isAuthenticated} />
               ) : (
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-600">
                   Check-in will appear here on the day of your booking.
@@ -493,7 +493,7 @@ const ReserveCard = ({
               </div>
               <button type="button" onClick={handleProceedToCheckout}
                 className="mt-2.5 w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 active:scale-[0.98]">
-                {effectiveIsAuthenticated ? 'Reserve now' : 'Sign in to reserve'}
+                {isAuthenticated ? 'Reserve now' : 'Sign in to reserve'}
               </button>
             </>
           ) : flowState === 'unavailable' ? (
@@ -978,7 +978,7 @@ const ExperienceDetailPage = () => {
 
   /* ── Derived data (after early returns, no hooks below this line) ── */
   const matchingBookings      = myBookings.filter((b) => String(b.experienceId?._id || b.experienceId) === String(exp?._id || ''))
-  const activeBooking         = matchingBookings.find((b) => ['pending', 'confirmed', 'pending_payment', 'partially_paid', 'completed'].includes(b.status)) || null
+  const activeBooking         = matchingBookings.find((b) => ['pending', 'confirmed', 'pending_payment', 'partially_paid'].includes(b.status)) || null
   const checkInEligibleBooking = matchingBookings.find((b) =>
     ['confirmed', 'completed', 'pending_payment', 'partially_paid'].includes(b.status) &&
     isTodaySlot(b?.slot?.date) &&
@@ -986,7 +986,7 @@ const ExperienceDetailPage = () => {
   ) || null
   const eligibleReviewBooking = matchingBookings.find((b) => b.status === 'completed' && !b.reviewLeft) || null
   const reviewedBooking       = matchingBookings.find((b) => b.status === 'completed' && b.reviewLeft) || null
-  const hasBooking            = Boolean(exp?.myBookingId || activeBooking?._id)
+  const hasBooking            = Boolean(activeBooking?._id)
   const canReview             = effectiveIsAuthenticated
   const bookingId             = exp?.myBookingId || eligibleReviewBooking?._id
   const catLabel              = CATEGORIES.find((c) => c.value === exp?.category)?.label || exp?.category || 'Experience'
@@ -1392,6 +1392,7 @@ const ExperienceDetailPage = () => {
               maxSelectableGuests={maxSelectableGuests}
               hasBooking={hasBooking}
               isAuthenticated={effectiveIsAuthenticated}
+              checkInEligibleBooking={checkInEligibleBooking}
               location={location}
               averageBookAheadDays={averageBookAheadDays}
               requireAuth={requireAuth}
