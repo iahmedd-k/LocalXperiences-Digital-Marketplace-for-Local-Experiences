@@ -26,8 +26,9 @@ export default function HomePage() {
         <PickedForYouSection />
       )}
       <SuggestedJourneysSection />
+        <TrendingSection />
       <QuickExperiencesSection />
-      <TrendingSection />
+    
       <CitiesSection />
       <HowItWorksSection />
       <TestimonialsSection />

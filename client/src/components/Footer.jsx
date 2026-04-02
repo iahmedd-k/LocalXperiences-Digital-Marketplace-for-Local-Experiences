@@ -23,7 +23,7 @@ const FOOTER_COLS = [
       { label: "Write a Story",         to: "/host/stories/create" },
       { label: "Host Bookings",         to: "/host/bookings" },
       { label: "Host Reviews",          to: "/host/reviews" },
-      { label: "Set Up Host Profile",   to: "/host/setup-profile" },
+      { label: "Set Up Host Profile",   to: "/host/profile" },
     ],
   },
   {

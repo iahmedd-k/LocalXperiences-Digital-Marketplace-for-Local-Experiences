@@ -338,7 +338,7 @@ const HostDashboardPage = () => {
                   <p className="text-[11px] text-emerald-700/80 font-medium">Add a bio and phone number to increase guest trust.</p>
                 </div>
               </div>
-              <Link to="/host/setup-profile" className="h-9 inline-flex items-center justify-center bg-emerald-700 text-white text-[12px] font-bold px-5 rounded-lg no-underline hover:bg-emerald-800 transition-colors shadow-sm">
+              <Link to="/host/profile" className="h-9 inline-flex items-center justify-center bg-emerald-700 text-white text-[12px] font-bold px-5 rounded-lg no-underline hover:bg-emerald-800 transition-colors shadow-sm">
                 Finish setup
               </Link>
             </div>

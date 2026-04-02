@@ -83,7 +83,7 @@ export default function BecomeAHostSection() {
       const { user: updatedUser, token } = res.data.data;
       dispatch(setCredentials({ user: updatedUser, token }));
       toast.success("You're now a host! Let's set up your profile.");
-      navigate("/host/setup-profile");
+      navigate("/host/profile");
     },
     onError: (err) => {
       toast.error(err?.response?.data?.message || "Something went wrong. Please try again.");

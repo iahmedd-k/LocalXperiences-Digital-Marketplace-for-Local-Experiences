@@ -163,6 +163,7 @@ const ReviewRow = ({ review }) => (
 const ProfilePage = ({ hideLayout = false }) => {
   const dispatch = useDispatch()
   const { user } = useSelector((s) => s.auth)
+  const isHost = user?.role === 'host'
   const [tab, setTab] = useState('profile')
   const [loading, setLoading] = useState(false)
   const [profileFile, setProfileFile] = useState(null)
@@ -171,6 +172,7 @@ const ProfilePage = ({ hideLayout = false }) => {
   const [profile, setProfile] = useState({
     name: user?.name || '',
     bio: user?.bio || '',
+    phone: user?.phone || '',
     languages: Array.isArray(user?.languages) ? user.languages.join(', ') : '',
     travelerPreferences: {
       categories:        Array.isArray(user?.travelerPreferences?.categories) ? user.travelerPreferences.categories.join(', ') : '',
@@ -212,14 +214,17 @@ const ProfilePage = ({ hideLayout = false }) => {
       const payload = new FormData()
       payload.append('name', profile.name)
       payload.append('bio', profile.bio)
+      if (isHost) payload.append('phone', profile.phone)
       payload.append('languages', profile.languages)
-      payload.append('travelerPreferences', JSON.stringify({
-        categories:        profile.travelerPreferences.categories.split(',').map(s => s.trim()).filter(Boolean),
-        interests:         profile.travelerPreferences.interests.split(',').map(s => s.trim()).filter(Boolean),
-        cities:            profile.travelerPreferences.cities.split(',').map(s => s.trim()).filter(Boolean),
-        preferredLanguage: profile.travelerPreferences.preferredLanguage,
-        // removed preferredDuration and budget
-      }))
+      if (!isHost) {
+        payload.append('travelerPreferences', JSON.stringify({
+          categories:        profile.travelerPreferences.categories.split(',').map(s => s.trim()).filter(Boolean),
+          interests:         profile.travelerPreferences.interests.split(',').map(s => s.trim()).filter(Boolean),
+          cities:            profile.travelerPreferences.cities.split(',').map(s => s.trim()).filter(Boolean),
+          preferredLanguage: profile.travelerPreferences.preferredLanguage,
+          // removed preferredDuration and budget
+        }))
+      }
       if (profileFile) payload.append('profilePic', profileFile)
       const { data } = await updateProfile(payload)
       dispatch(updateUser(data.data))
@@ -368,22 +373,30 @@ const ProfilePage = ({ hideLayout = false }) => {
                 <Inp label="Languages" value={profile.languages}  onChange={e => setProfile({...profile, languages: e.target.value})} placeholder="English, Urdu" />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <Inp label="Preferred categories" value={profile.travelerPreferences.categories} onChange={e => setProfile({...profile, travelerPreferences: {...profile.travelerPreferences, categories: e.target.value}})} placeholder="food, culture" />
-                <Inp label="Top interests"        value={profile.travelerPreferences.interests}  onChange={e => setProfile({...profile, travelerPreferences: {...profile.travelerPreferences, interests: e.target.value}})}  placeholder="street food, art" />
-              </div>
+              {isHost ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <Inp label="Phone" value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} placeholder="+92 300 1234567" />
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <Inp label="Preferred categories" value={profile.travelerPreferences.categories} onChange={e => setProfile({...profile, travelerPreferences: {...profile.travelerPreferences, categories: e.target.value}})} placeholder="food, culture" />
+                    <Inp label="Top interests"        value={profile.travelerPreferences.interests}  onChange={e => setProfile({...profile, travelerPreferences: {...profile.travelerPreferences, interests: e.target.value}})}  placeholder="street food, art" />
+                  </div>
 
-              <Inp label="Preferred cities" value={profile.travelerPreferences.cities} onChange={e => setProfile({...profile, travelerPreferences: {...profile.travelerPreferences, cities: e.target.value}})} placeholder="Lahore, Karachi" />
+                  <Inp label="Preferred cities" value={profile.travelerPreferences.cities} onChange={e => setProfile({...profile, travelerPreferences: {...profile.travelerPreferences, cities: e.target.value}})} placeholder="Lahore, Karachi" />
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                <Sel
-                  label="Language"
-                  value={profile.travelerPreferences.preferredLanguage}
-                  onChange={e => setProfile({...profile, travelerPreferences: {...profile.travelerPreferences, preferredLanguage: e.target.value}})}
-                  options={[{ value: 'en', label: 'English' }, { value: 'ur', label: 'Urdu' }, { value: 'fr', label: 'French' }, { value: 'es', label: 'Spanish' }]}
-                />
-                {/* Removed Duration and Budget selectors */}
-              </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                    <Sel
+                      label="Language"
+                      value={profile.travelerPreferences.preferredLanguage}
+                      onChange={e => setProfile({...profile, travelerPreferences: {...profile.travelerPreferences, preferredLanguage: e.target.value}})}
+                      options={[{ value: 'en', label: 'English' }, { value: 'ur', label: 'Urdu' }, { value: 'fr', label: 'French' }, { value: 'es', label: 'Spanish' }]}
+                    />
+                    {/* Removed Duration and Budget selectors */}
+                  </div>
+                </>
+              )}
 
               <Field label="Bio">
                 <textarea

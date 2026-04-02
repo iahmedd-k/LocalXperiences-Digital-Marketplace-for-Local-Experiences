@@ -1,5 +1,3 @@
-import axios from 'axios';
+import api from '../config/api.js'
 
-export function getUserRewards(userId) {
-  return axios.get(`/api/checkins/user/${userId}`);
-}
+export const getUserRewards = (userId) => api.get(`/checkins/user/${userId}`)

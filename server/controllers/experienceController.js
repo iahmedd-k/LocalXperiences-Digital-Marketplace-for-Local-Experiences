@@ -43,6 +43,33 @@ const geocodeAddress = async (address) => {
   }
 };
 
+const buildLocationGeocodeQueries = (location = {}) => {
+  const address = String(location?.address || '').trim();
+  const city = String(location?.city || '').trim();
+  const country = String(location?.country || '').trim();
+
+  return [
+    [address, city, country].filter(Boolean).join(', '),
+    [address, city].filter(Boolean).join(', '),
+    [city, country].filter(Boolean).join(', '),
+    address,
+    city,
+  ].filter(Boolean);
+};
+
+const geocodeLocation = async (location = {}) => {
+  const queries = buildLocationGeocodeQueries(location);
+
+  for (const query of queries) {
+    const geo = await geocodeAddress(query);
+    if (Number.isFinite(geo?.lng) && Number.isFinite(geo?.lat) && !(geo.lng === 0 && geo.lat === 0)) {
+      return geo;
+    }
+  }
+
+  return { lng: 0, lat: 0 };
+};
+
 const toRadians = (value) => (value * Math.PI) / 180;
 
 const getDistanceKm = (fromLat, fromLng, toLat, toLng) => {
@@ -503,8 +530,7 @@ const createExperience = async (req, res, next) => {
     let lat = parsedLocation.coordinatesHint?.lat;
 
     if (lng == null || lat == null) {
-      const addressToGeocode = parsedLocation.address || parsedLocation.city;
-      const geo = await geocodeAddress(addressToGeocode);
+      const geo = await geocodeLocation(parsedLocation);
       lng = geo.lng;
       lat = geo.lat;
     }
@@ -629,8 +655,13 @@ const updateExperience = async (req, res, next) => {
     // If location updated — re-geocode
     if (location) {
       const parsedLocation       = typeof location === 'string' ? JSON.parse(location) : location;
-      const addressToGeocode     = parsedLocation.address || parsedLocation.city;
-      const { lat, lng }         = await geocodeAddress(addressToGeocode);
+      let lng = parsedLocation?.coordinatesHint?.lng;
+      let lat = parsedLocation?.coordinatesHint?.lat;
+      if (lng == null || lat == null) {
+        const geo = await geocodeLocation(parsedLocation);
+        lng = geo.lng;
+        lat = geo.lat;
+      }
       parsedLocation.coordinates = { type: 'Point', coordinates: [lng, lat] };
       updates.location           = parsedLocation;
     }

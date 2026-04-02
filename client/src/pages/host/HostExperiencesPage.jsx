@@ -76,13 +76,13 @@ const HostExperiencesPage = () => {
             <Link to="/host/dashboard" className="text-xs text-emerald-600">
               ← Dashboard
             </Link>
-            <h1 className="text-lg sm:text-xl font-bold mt-1">Manage Listings</h1>
-            <p className="text-xs text-gray-500">Your hosted experiences</p>
+            <h1 className="text-xl sm:text-2xl font-bold mt-1 text-slate-900">Manage Listings</h1>
+            <p className="text-xs text-slate-500">Your hosted experiences</p>
           </div>
 
           <Link
             to="/host/experiences/create"
-            className="flex items-center justify-center gap-2 bg-emerald-600 text-white text-xs px-3 py-2 rounded-lg"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
           >
             <Plus size={14} />
             New
@@ -90,12 +90,12 @@ const HostExperiencesPage = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white border rounded-xl p-3 space-y-3">
+        <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 space-y-3">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search..."
-            className="w-full border rounded-lg px-3 py-2 text-sm"
+            placeholder="Search listings by title, category, or city..."
+            className="w-full rounded-2xl bg-white px-4 py-3 text-sm text-slate-700 shadow-sm outline-none ring-1 ring-slate-200 transition placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-200"
           />
 
           <div className="flex flex-wrap gap-2">
@@ -103,10 +103,10 @@ const HostExperiencesPage = () => {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`text-xs px-2 py-1 rounded-md capitalize ${
+                className={`text-xs px-3 py-2 rounded-full capitalize font-semibold transition ${
                   filter === f
-                    ? 'bg-emerald-600 text-white'
-                    : 'border bg-white text-gray-600'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 {f} ({counts[f]})
@@ -142,10 +142,10 @@ const HostExperiencesPage = () => {
               const isDeleting = deletingId === item._id
 
               return (
-                <div key={item._id} className="bg-white border rounded-xl p-3 flex flex-col">
+                <div key={item._id} className="rounded-3xl bg-white p-4 flex flex-col shadow-sm ring-1 ring-slate-200">
 
                   {/* Image */}
-                  <div className="h-36 sm:h-40 rounded-lg overflow-hidden bg-gray-100">
+                  <div className="h-36 sm:h-40 rounded-2xl overflow-hidden bg-slate-100">
                     {item.photos?.[0] ? (
                       <img
                         src={item.photos[0]}
@@ -162,7 +162,7 @@ const HostExperiencesPage = () => {
                   {/* Content */}
                   <div className="mt-2 flex-1">
                     <div className="flex justify-between items-start gap-2">
-                      <h2 className="text-sm font-semibold line-clamp-2">
+                      <h2 className="text-sm font-semibold text-slate-900 line-clamp-2">
                         {item.title}
                       </h2>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full ${
@@ -174,7 +174,7 @@ const HostExperiencesPage = () => {
                       </span>
                     </div>
 
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-slate-500 mt-1">
                       {item.location?.city || '—'} • {item.category || '—'}
                     </p>
 
@@ -187,7 +187,7 @@ const HostExperiencesPage = () => {
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Link
                       to={`/host/experiences/${item._id}/edit`}
-                      className="flex-1 text-center text-xs border rounded-md py-1.5"
+                      className="flex-1 rounded-full bg-emerald-600 px-3 py-2 text-center text-xs font-semibold text-white no-underline transition hover:bg-emerald-700"
                     >
                       <Pencil size={12} className="inline mr-1" />
                       Edit
@@ -195,7 +195,7 @@ const HostExperiencesPage = () => {
 
                     <Link
                       to={`/experiences/${item._id}`}
-                      className="flex-1 text-center text-xs border rounded-md py-1.5"
+                      className="flex-1 rounded-full bg-slate-100 px-3 py-2 text-center text-xs font-semibold text-slate-700 no-underline transition hover:bg-slate-200"
                     >
                       <Eye size={12} className="inline mr-1" />
                       View
@@ -204,7 +204,7 @@ const HostExperiencesPage = () => {
                     <button
                       onClick={() => handleDelete(item._id)}
                       disabled={isDeleting}
-                      className="flex-1 text-center text-xs border border-red-200 text-red-600 rounded-md py-1.5"
+                      className="flex-1 rounded-full bg-rose-50 px-3 py-2 text-center text-xs font-semibold text-rose-600 transition hover:bg-rose-100 disabled:opacity-60"
                     >
                       <Trash2 size={12} className="inline mr-1" />
                       {isDeleting ? '...' : 'Delete'}

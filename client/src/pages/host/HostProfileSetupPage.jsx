@@ -3,19 +3,106 @@ import { useSelector, useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { useMutation } from "@tanstack/react-query"
 import toast from "react-hot-toast"
+import {
+  Camera,
+  FileImage,
+  ImagePlus,
+  MapPin,
+  PenSquare,
+  Phone,
+  Plus,
+  Sparkles,
+  Trash2,
+  User,
+} from "lucide-react"
 
 import { updateProfile } from "../../services/authService.js"
 import { updateUser } from "../../slices/authSlice.js"
+import Navbar from "../../components/Navbar.jsx"
+import Avatar from "../../components/common/Avatar.jsx"
 
-function FieldBlock({ label, required, hint, children }) {
+const INPUT_CLASS =
+  "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+
+const TEXTAREA_CLASS = `${INPUT_CLASS} min-h-[120px] resize-y`
+
+function FieldBlock({ label, required, hint, icon: Icon, children }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-gray-700">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        {Icon ? <Icon className="h-3.5 w-3.5 text-emerald-600" /> : null}
+        <span>
+          {label}
+          {required ? <span className="ml-1 text-rose-500">*</span> : null}
+        </span>
       </label>
       {children}
-      {hint && <p className="text-xs text-gray-400">{hint}</p>}
+      {hint ? <p className="text-xs leading-5 text-slate-500">{hint}</p> : null}
+    </div>
+  )
+}
+
+function StoryBlockEditor({ block, index, canRemove, onUpdate, onRemove }) {
+  const isPhoto = block.type === "photo"
+
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-600">
+            {block.type} block
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-900">Story section {index + 1}</p>
+        </div>
+        {canRemove ? (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-100"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Remove
+          </button>
+        ) : null}
+      </div>
+
+      <div className="space-y-4">
+        <input
+          value={block.title}
+          onChange={(e) => onUpdate("title", e.target.value)}
+          placeholder="Give this section a short title"
+          className={INPUT_CLASS}
+        />
+
+        {isPhoto ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            <input
+              value={block.photo}
+              onChange={(e) => onUpdate("photo", e.target.value)}
+              placeholder="Paste photo URL"
+              className={INPUT_CLASS}
+            />
+            <input
+              value={block.caption}
+              onChange={(e) => onUpdate("caption", e.target.value)}
+              placeholder="Write a short caption"
+              className={INPUT_CLASS}
+            />
+          </div>
+        ) : (
+          <textarea
+            value={block.content}
+            onChange={(e) => onUpdate("content", e.target.value)}
+            rows={4}
+            placeholder={
+              block.type === "tip"
+                ? "Share a local tip guests should know."
+                : "Tell your story in a warm, specific way."
+            }
+            className={`${INPUT_CLASS} min-h-[132px] resize-y`}
+          />
+        )}
+      </div>
     </div>
   )
 }
@@ -48,9 +135,8 @@ export default function HostProfileSetupPage() {
   )
 
   const [photoFile, setPhotoFile] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(user?.profilePic || null)
+  const [photoPreview, setPhotoPreview] = useState(user?.profilePic || "")
 
-  // 🔥 Fix memory leak
   useEffect(() => {
     return () => {
       if (photoPreview?.startsWith("blob:")) {
@@ -78,6 +164,16 @@ export default function HostProfileSetupPage() {
   const handlePhoto = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file")
+      return
+    }
+
+    if (photoPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(photoPreview)
+    }
+
     setPhotoFile(file)
     setPhotoPreview(URL.createObjectURL(file))
   }
@@ -85,6 +181,7 @@ export default function HostProfileSetupPage() {
   const handleSubmit = (e) => {
     e.preventDefault()
 
+    if (!name.trim()) return toast.error("Full name is required")
     if (bio.trim().length < 20) return toast.error("Bio must be at least 20 characters")
     if (!phone.trim()) return toast.error("Phone required")
 
@@ -112,7 +209,7 @@ export default function HostProfileSetupPage() {
             photo: b.photo?.trim(),
             caption: b.caption?.trim(),
           }))
-          .filter((b) => b.content || b.photo),
+          .filter((b) => b.content || b.photo || b.title),
       })
     )
 
@@ -121,9 +218,11 @@ export default function HostProfileSetupPage() {
     save(fd)
   }
 
-  const updateStoryBlock = (i, field, value) => {
+  const updateStoryBlock = (index, field, value) => {
     setStoryBlocks((prev) =>
-      prev.map((b, idx) => (idx === i ? { ...b, [field]: value } : b))
+      prev.map((block, currentIndex) =>
+        currentIndex === index ? { ...block, [field]: value } : block
+      )
     )
   }
 
@@ -134,140 +233,310 @@ export default function HostProfileSetupPage() {
     ])
   }
 
-  const removeStoryBlock = (i) => {
-    setStoryBlocks((prev) => prev.filter((_, idx) => idx !== i))
+  const removeStoryBlock = (index) => {
+    setStoryBlocks((prev) => prev.filter((_, currentIndex) => currentIndex !== index))
   }
 
   if (!isHost) return null
 
   return (
-    <div className="min-h-screen bg-blue-50">
-      <main className="max-w-xl mx-auto px-4 py-5 space-y-6">
+    <div className="min-h-screen bg-white">
+      <Navbar isDashboard={true} onMenuToggle={() => {}} />
+      <div aria-hidden="true" className="h-20 md:h-[92px]" />
 
-        {/* Header */}
-        <div>
-          <p className="text-xs font-semibold text-emerald-600">Step 2 of 3</p>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-            Complete your host profile
-          </h1>
-          <p className="text-sm text-gray-500">
-            Build trust with guests before your first booking.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-
-          {/* Photo */}
-          <div className="flex items-center gap-3 bg-white p-3 rounded-xl border">
-            <div
-              onClick={() => fileRef.current?.click()}
-              className="w-16 h-16 rounded-full overflow-hidden border cursor-pointer bg-gray-100"
-            >
-              {photoPreview && (
-                <img src={photoPreview} className="w-full h-full object-cover" />
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="text-sm font-semibold text-emerald-600"
-            >
-              {photoPreview ? "Change photo" : "Upload photo"}
-            </button>
-
-            <input
-              ref={fileRef}
-              type="file"
-              className="hidden"
-              onChange={handlePhoto}
-            />
-          </div>
-
-          {/* Basic fields */}
-          <FieldBlock label="Full name" required>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="input" />
-          </FieldBlock>
-
-          <FieldBlock label="About you" required>
-            <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={4} className="input" />
-          </FieldBlock>
-
-          <FieldBlock label="Story headline">
-            <input value={headline} onChange={(e) => setHeadline(e.target.value)} className="input" />
-          </FieldBlock>
-
-          <div className="grid sm:grid-cols-2 gap-3">
-            <input placeholder="City" value={storyCity} onChange={(e) => setStoryCity(e.target.value)} className="input" />
-            <input placeholder="Craft" value={craft} onChange={(e) => setCraft(e.target.value)} className="input" />
-          </div>
-
-          <FieldBlock label="Featured tips">
-            <textarea value={featuredTips} onChange={(e) => setFeaturedTips(e.target.value)} rows={3} className="input" />
-          </FieldBlock>
-
-          {/* Story Blocks */}
-          <div className="bg-white border rounded-xl p-4 space-y-4">
-            <div className="flex justify-between items-center">
-              <p className="font-semibold text-sm">Story blocks</p>
-              <div className="flex gap-2 flex-wrap">
-                <button type="button" onClick={() => addStoryBlock("text")} className="btn-sm">+ Text</button>
-                <button type="button" onClick={() => addStoryBlock("photo")} className="btn-sm">+ Photo</button>
-                <button type="button" onClick={() => addStoryBlock("tip")} className="btn-sm">+ Tip</button>
+      <main className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
+        <div className="grid gap-8 lg:grid-cols-[360px_minmax(0,1fr)]">
+          <aside className="space-y-6 lg:sticky lg:top-28 lg:self-start">
+            <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+              <div className="bg-[linear-gradient(135deg,#ecfdf5_0%,#f8fafc_100%)] px-6 py-6">
+                <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-700">
+                  Host Setup
+                </p>
+                <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+                  Complete your host profile
+                </h1>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  Add a confident photo, a clear story, and the details guests need before they trust you with a booking.
+                </p>
               </div>
-            </div>
 
-            {storyBlocks.map((b, i) => (
-              <div key={i} className="border rounded-lg p-3 space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="font-semibold">{b.type}</span>
-                  {storyBlocks.length > 1 && (
-                    <button onClick={() => removeStoryBlock(i)} className="text-red-500">Remove</button>
-                  )}
+              <div className="space-y-4 px-6 py-6">
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                  <p className="text-sm font-semibold text-emerald-900">What guests notice first</p>
+                  <ul className="mt-3 space-y-2 text-sm text-emerald-800">
+                    <li className="flex gap-2">
+                      <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                      A sharp, friendly photo
+                    </li>
+                    <li className="flex gap-2">
+                      <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                      A real story about your local expertise
+                    </li>
+                    <li className="flex gap-2">
+                      <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                      Clear contact and language details
+                    </li>
+                  </ul>
                 </div>
 
-                <input
-                  placeholder="Title"
-                  value={b.title}
-                  onChange={(e) => updateStoryBlock(i, "title", e.target.value)}
-                  className="input"
-                />
-
-                {b.type === "photo" ? (
-                  <>
-                    <input placeholder="Photo URL" value={b.photo} onChange={(e) => updateStoryBlock(i, "photo", e.target.value)} className="input" />
-                    <input placeholder="Caption" value={b.caption} onChange={(e) => updateStoryBlock(i, "caption", e.target.value)} className="input" />
-                  </>
-                ) : (
-                  <textarea
-                    value={b.content}
-                    onChange={(e) => updateStoryBlock(i, "content", e.target.value)}
-                    rows={3}
-                    className="input"
-                  />
-                )}
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Profile Preview</p>
+                  <div className="mt-4 flex items-center gap-4">
+                    <Avatar name={name || user?.name} src={photoPreview} size="xl" />
+                    <div className="min-w-0">
+                      <p className="truncate text-lg font-semibold text-slate-900">{name || "Your name"}</p>
+                      <p className="mt-1 text-sm text-slate-500">{headline || "Your host headline will appear here"}</p>
+                      <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-emerald-700">
+                        {storyCity || "City"}{craft ? ` · ${craft}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          </aside>
 
-          {/* Contact */}
-          <FieldBlock label="Phone" required>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} className="input" />
-          </FieldBlock>
+          <section className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)] sm:p-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+                <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">
+                    Profile Photo
+                  </p>
 
-          <FieldBlock label="Languages">
-            <input value={languages} onChange={(e) => setLanguages(e.target.value)} className="input" />
-          </FieldBlock>
+                  <div className="mt-5 flex flex-col items-center text-center">
+                    <div className="relative">
+                      <div className="rounded-full border-4 border-white shadow-lg">
+                        <Avatar name={name || user?.name} src={photoPreview} size="xl" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => fileRef.current?.click()}
+                        className="absolute bottom-1 right-1 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white bg-emerald-600 text-white shadow-lg transition hover:bg-emerald-700"
+                        aria-label="Upload profile photo"
+                      >
+                        <Camera className="h-4 w-4" />
+                      </button>
+                    </div>
 
-          {/* Submit */}
-          <button
-            disabled={isPending}
-            className="w-full bg-emerald-600 text-white py-3 rounded-lg text-sm font-semibold"
-          >
-            {isPending ? "Saving..." : "Save & Continue"}
-          </button>
+                    <p className="mt-5 text-base font-semibold text-slate-900">
+                      {photoFile ? photoFile.name : "Add a polished host photo"}
+                    </p>
+                    <p className="mt-2 max-w-xs text-sm leading-6 text-slate-500">
+                      Use a clear portrait with good lighting. Square images look best in listings and profile cards.
+                    </p>
 
-        </form>
+                    <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => fileRef.current?.click()}
+                        className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                      >
+                        <ImagePlus className="h-4 w-4" />
+                        {photoPreview ? "Change photo" : "Upload photo"}
+                      </button>
+
+                      {photoPreview ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (photoPreview?.startsWith("blob:")) {
+                              URL.revokeObjectURL(photoPreview)
+                            }
+                            setPhotoFile(null)
+                            setPhotoPreview(user?.profilePic || "")
+                            if (fileRef.current) fileRef.current.value = ""
+                          }}
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Remove
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handlePhoto}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-5">
+                  <FieldBlock
+                    label="Full name"
+                    required
+                    icon={User}
+                    hint="This is how guests will see your name across the dashboard and public host pages."
+                  >
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your full name"
+                      className={INPUT_CLASS}
+                    />
+                  </FieldBlock>
+
+                  <FieldBlock
+                    label="About you"
+                    required
+                    icon={PenSquare}
+                    hint="Keep it specific. Mention what you host, why you love it, and what guests can expect from your style."
+                  >
+                    <textarea
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      rows={6}
+                      placeholder="Example: I host food walks through the old city and love introducing guests to small family-run kitchens, hidden tea spots, and stories behind local dishes."
+                      className={TEXTAREA_CLASS}
+                    />
+                  </FieldBlock>
+                </div>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <FieldBlock label="Story headline" icon={Sparkles}>
+                  <input
+                    value={headline}
+                    onChange={(e) => setHeadline(e.target.value)}
+                    placeholder="A short line that captures your hosting style"
+                    className={INPUT_CLASS}
+                  />
+                </FieldBlock>
+
+                <FieldBlock
+                  label="Phone"
+                  required
+                  icon={Phone}
+                  hint="Only used for account and booking coordination."
+                >
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+92 300 1234567"
+                    className={INPUT_CLASS}
+                  />
+                </FieldBlock>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <FieldBlock label="City" icon={MapPin}>
+                  <input
+                    value={storyCity}
+                    onChange={(e) => setStoryCity(e.target.value)}
+                    placeholder="Karachi"
+                    className={INPUT_CLASS}
+                  />
+                </FieldBlock>
+
+                <FieldBlock label="Craft or specialty" icon={Sparkles}>
+                  <input
+                    value={craft}
+                    onChange={(e) => setCraft(e.target.value)}
+                    placeholder="Street food, old city walks, pottery, music"
+                    className={INPUT_CLASS}
+                  />
+                </FieldBlock>
+              </div>
+
+              <FieldBlock
+                label="Languages"
+                icon={User}
+                hint="Separate languages with commas so guests can quickly scan them."
+              >
+                <input
+                  value={languages}
+                  onChange={(e) => setLanguages(e.target.value)}
+                  placeholder="English, Urdu, Punjabi"
+                  className={INPUT_CLASS}
+                />
+              </FieldBlock>
+
+              <FieldBlock
+                label="Featured tips"
+                icon={Sparkles}
+                hint="Add one tip per line, like what to wear, when to arrive, or what local detail guests should not miss."
+              >
+                <textarea
+                  value={featuredTips}
+                  onChange={(e) => setFeaturedTips(e.target.value)}
+                  rows={4}
+                  placeholder={"Wear comfortable shoes\nArrive 10 minutes early\nBring cash for small local vendors"}
+                  className={`${INPUT_CLASS} min-h-[140px] resize-y`}
+                />
+              </FieldBlock>
+
+              <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 sm:p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">
+                      Story Blocks
+                    </p>
+                    <h2 className="mt-2 text-xl font-bold text-slate-900">Build a profile that feels human</h2>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      Mix story, tips, and photos so guests understand your personality before they book.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { type: "text", label: "Text" },
+                      { type: "photo", label: "Photo" },
+                      { type: "tip", label: "Tip" },
+                    ].map((item) => (
+                      <button
+                        key={item.type}
+                        type="button"
+                        onClick={() => addStoryBlock(item.type)}
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                      >
+                        <Plus className="h-4 w-4" />
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-4">
+                  {storyBlocks.map((block, index) => (
+                    <StoryBlockEditor
+                      key={`${block.type}-${index}`}
+                      block={block}
+                      index={index}
+                      canRemove={storyBlocks.length > 1}
+                      onUpdate={(field, value) => updateStoryBlock(index, field, value)}
+                      onRemove={() => removeStoryBlock(index)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-2xl bg-emerald-50 p-3 text-emerald-700">
+                    <FileImage className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Ready to publish your host identity</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-500">
+                      Save this profile to unlock the full host dashboard and start creating experiences.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  disabled={isPending}
+                  className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300 sm:min-w-[220px]"
+                >
+                  {isPending ? "Saving..." : "Save & Continue"}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
       </main>
     </div>
   )

@@ -1,5 +1,5 @@
 import GroupInvitePage from '../pages/group/GroupInvitePage.jsx'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute.jsx'
 import HostRoute      from './HostRoute.jsx'
 import MobileBottomNav from '../components/common/MobileBottomNav.jsx'
@@ -36,7 +36,6 @@ import RewardsPage    from '../pages/traveler/RewardsPage.jsx'
 import HostDashboardPage      from '../pages/host/HostDashboardPage.jsx'
 import PathwayManagementPage  from '../pages/host/PathwayManagementPage.jsx'
 import CreatePathwayPage      from '../pages/host/CreatePathwayPage.jsx'
-import HostProfileSetupPage  from '../pages/host/HostProfileSetupPage.jsx'
 import CreateExperiencePage  from '../pages/host/CreateExperiencePage.jsx'
 import CreateStoryPage       from '../pages/host/CreateStoryPage.jsx'
 import EditExperiencePage   from '../pages/host/EditExperiencePage.jsx'
@@ -82,19 +81,20 @@ const AppRouter = () => (
       </Route>
 
       {/* ── Host only ── */}
-      <Route element={<HostRoute />}>
+      <Route path="/host" element={<HostRoute />}>
+        <Route path="setup-profile"      element={<Navigate to="/host/profile" replace />} />
         <Route element={<HostLayout />}>
-          <Route path="/host/dashboard"          element={<HostDashboardPage />} />
-          <Route path="/host/pathways"           element={<PathwayManagementPage />} />
-          <Route path="/host/pathways/create"    element={<CreatePathwayPage />} />
-          <Route path="/host/experiences"        element={<HostExperiencesPage />} />
-          <Route path="/host/experiences/create" element={<CreateExperiencePage />} />
-          <Route path="/host/stories/create"   element={<CreateStoryPage />} />
-          <Route path="/host/experiences/:id/edit" element={<EditExperiencePage />} />
-          <Route path="/host/bookings"           element={<HostBookingsPage />} />
-          <Route path="/host/reviews"            element={<HostReviewsPage />} />
-          <Route path="/host/profile"            element={<ProfilePage hideLayout={true} />} />
-          <Route path="/host/setup-profile"      element={<HostProfileSetupPage />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard"          element={<HostDashboardPage />} />
+          <Route path="pathways"           element={<PathwayManagementPage />} />
+          <Route path="pathways/create"    element={<CreatePathwayPage />} />
+          <Route path="experiences"        element={<HostExperiencesPage />} />
+          <Route path="experiences/create" element={<CreateExperiencePage />} />
+          <Route path="stories/create"     element={<CreateStoryPage />} />
+          <Route path="experiences/:id/edit" element={<EditExperiencePage />} />
+          <Route path="bookings"           element={<HostBookingsPage />} />
+          <Route path="reviews"            element={<HostReviewsPage />} />
+          <Route path="profile"            element={<ProfilePage hideLayout={true} />} />
         </Route>
       </Route>
 

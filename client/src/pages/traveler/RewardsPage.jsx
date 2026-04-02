@@ -6,6 +6,7 @@ import {
   Star, Ticket, Trophy, ArrowRight, Zap
 } from 'lucide-react'
 import { getRewardsConfig } from '../../services/rewardService.js'
+import { getUserRewards } from '../../services/rewardsService.js'
 import Spinner from '../../components/common/Spinner.jsx'
 
 import Footer from '../../components/common/Footer.jsx'
@@ -31,14 +32,19 @@ const HOW_TO = [
 /* ─── component ────────────────────────────────────────── */
 const RewardsPage = () => {
   const { user } = useSelector((s) => s.auth)
-  const userRewards = user?.rewards || { points: 0, level: 'Explorer', badges: [] }
 
   const { data: configRaw, isLoading } = useQuery({
     queryKey: ['rewardsConfig'],
     queryFn: () => getRewardsConfig().then((res) => res.data.data),
   })
 
-  if (isLoading)
+  const { data: rewardsRaw, isLoading: isRewardsLoading } = useQuery({
+    queryKey: ['userRewards', user?._id],
+    queryFn: () => getUserRewards(user._id).then((res) => res.data.data),
+    enabled: !!user?._id,
+  })
+
+  if (isLoading || isRewardsLoading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50">
         <Spinner size="lg" />
@@ -46,6 +52,7 @@ const RewardsPage = () => {
     )
 
   const { badges = [], LEVELS = [] } = configRaw || {}
+  const userRewards = rewardsRaw || user?.rewards || { points: 0, level: 'Explorer', badges: [], checkInCount: 0 }
 
   const currentLevelIndex   = LEVELS.findIndex((l) => l.label === userRewards.level)
   const nextLevel           = LEVELS[currentLevelIndex + 1]
@@ -125,10 +132,10 @@ const RewardsPage = () => {
 
           {/* stats strip */}
           <div className="grid grid-cols-3 divide-x divide-stone-100 border-t border-stone-100">
-            {[
+            {[ 
               { label: 'Badges',     value: userRewards.badges.length },
               { label: 'Total Pts',  value: userRewards.points.toLocaleString() },
-              { label: 'Global Rank',value: `#${Math.floor(Math.random() * 500) + 120}` },
+              { label: 'Check-ins',  value: Number(userRewards.checkInCount || 0).toLocaleString() },
             ].map(({ label, value }) => (
               <div key={label} className="py-5 flex flex-col items-center gap-0.5">
                 <span className="text-lg sm:text-xl font-bold text-emerald-600">{value}</span>

@@ -400,7 +400,7 @@ export default function AuthPage({ defaultMode = "login" }) {
       dispatch(setCredentials({ user, token }));
       toast.success("Account created successfully");
       // Hosts go to profile setup first; travellers go back to where they came from
-      navigate(user?.role === "host" ? "/host/setup-profile" : (from || "/"));
+      navigate(user?.role === "host" ? "/host/profile" : (from || "/"));
     } catch (err) {
       toast.error(err?.response?.data?.message || "Signup failed");
     }

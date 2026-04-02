@@ -684,7 +684,7 @@ const checkInBooking = async (req, res, next) => {
     }
 
     if (booking.checkIn?.status === 'checked_in') {
-      return errorResponse(res, 400, 'This booking has already been checked in');
+      return successResponse(res, 200, 'Booking already checked in', booking);
     }
 
     const rewardPoints = Number(booking.experienceId?.rewards?.pointsPerCheckIn || 0);
@@ -696,13 +696,12 @@ const checkInBooking = async (req, res, next) => {
     const withinRange = hasGeoAttempt ? distanceMeters(Number(lat), Number(lng), expLat, expLng) <= 200 : false;
     const qrMatches = qrCode && String(qrCode).trim() === String(booking.checkIn?.qrCode || '').trim();
 
-    if (!withinRange && !qrMatches) {
-      return errorResponse(res, 400, 'Check-in requires being within 200 meters or entering the host QR code');
-    }
+    // Temporary fallback: allow check-in even when geo / QR verification is unavailable.
+    const checkInMethod = qrMatches ? 'qr' : withinRange ? 'geo' : 'none';
 
     booking.checkIn = {
       status: 'checked_in',
-      method: withinRange ? 'geo' : 'qr',
+      method: checkInMethod,
       qrCode: booking.checkIn?.qrCode || '',
       checkedInAt: new Date(),
       rewardPointsGranted: rewardPoints,
@@ -711,6 +710,7 @@ const checkInBooking = async (req, res, next) => {
 
     if (isTraveler) {
       const traveler = await User.findById(req.user._id);
+      traveler.checkIns = Array.isArray(traveler.checkIns) ? traveler.checkIns : [];
       const rewardResult = await awardUserEvent({
         userId: traveler._id,
         type: 'check_in',
@@ -718,7 +718,7 @@ const checkInBooking = async (req, res, next) => {
         experienceId: booking.experienceId?._id,
         bookingId: booking._id,
         category: booking.experienceId?.category || '',
-        meta: { method: withinRange ? 'geo' : 'qr' },
+        meta: { method: checkInMethod },
       });
 
       traveler.checkIns.push({

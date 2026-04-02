@@ -27,7 +27,7 @@ const HOST_PROFILE_ITEMS = [
   { labelKey: "nav_create_experience", to: "/host/experiences/create" },
 ];
 
-const HOST_SETUP_ITEM = [{ labelKey: "nav_complete_host_profile", to: "/host/setup-profile" }];
+const HOST_SETUP_ITEM = [{ labelKey: "nav_complete_host_profile", to: "/host/profile" }];
 
 
 export default function Navbar({ activeNav, setActiveNav, onMenuToggle, isDashboard: isDashboardProp }) {

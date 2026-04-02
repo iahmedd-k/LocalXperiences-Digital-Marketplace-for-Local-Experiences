@@ -92,6 +92,21 @@ const userSchema = new mongoose.Schema(
       badges: { type: [String], default: [] },
       checkInCount: { type: Number, default: 0 },
     },
+    checkIns: [
+      {
+        experienceId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Experience',
+        },
+        bookingId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Booking',
+        },
+        checkedInAt: { type: Date, default: Date.now },
+        city: { type: String, default: '' },
+        points: { type: Number, default: 0 },
+      },
+    ],
     googleId: {
       type: String,
       default: null,

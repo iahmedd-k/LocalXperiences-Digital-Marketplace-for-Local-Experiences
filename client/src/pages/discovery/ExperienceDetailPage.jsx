@@ -74,6 +74,56 @@ const toLatLng = (coordinates) => {
   return [lat, lng]
 }
 
+const haversineKm = (from, to) => {
+  if (!Array.isArray(from) || !Array.isArray(to)) return Number.POSITIVE_INFINITY
+  const [fromLat, fromLng] = from
+  const [toLat, toLng] = to
+  if (![fromLat, fromLng, toLat, toLng].every(Number.isFinite)) return Number.POSITIVE_INFINITY
+
+  const toRad = (value) => (value * Math.PI) / 180
+  const earthRadiusKm = 6371
+  const dLat = toRad(toLat - fromLat)
+  const dLng = toRad(toLng - fromLng)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(fromLat)) * Math.cos(toRad(toLat)) * Math.sin(dLng / 2) ** 2
+
+  return 2 * earthRadiusKm * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+const resolveBestLatLng = (coordinates, fallbackCenter) => {
+  const raw = coordinates?.coordinates || coordinates
+  if (!Array.isArray(raw) || raw.length !== 2) return null
+
+  const [first, second] = raw
+  if (![first, second].every(Number.isFinite)) return null
+
+  const geoJsonOrder = [second, first]
+  const swappedOrder = [first, second]
+
+  const isValid = ([lat, lng]) =>
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    Math.abs(lat) <= 90 &&
+    Math.abs(lng) <= 180 &&
+    !(lat === 0 && lng === 0)
+
+  const geoValid = isValid(geoJsonOrder)
+  const swappedValid = isValid(swappedOrder)
+
+  if (!geoValid && !swappedValid) return null
+  if (geoValid && !swappedValid) return geoJsonOrder
+  if (!geoValid && swappedValid) return swappedOrder
+
+  if (Array.isArray(fallbackCenter) && fallbackCenter.length === 2) {
+    const geoDistance = haversineKm(geoJsonOrder, fallbackCenter)
+    const swappedDistance = haversineKm(swappedOrder, fallbackCenter)
+    return swappedDistance + 5 < geoDistance ? swappedOrder : geoJsonOrder
+  }
+
+  return geoJsonOrder
+}
+
 const buildStepDescription = ({ name, city, categoryLabel, isTerminal, isStart, durationLabel }) => {
   if (isStart)    return city ? `Meet your host and begin the experience in ${city}.` : 'Meet your host and get ready for the experience.'
   if (isTerminal) return city ? `The experience wraps up here in ${city}.` : 'This is the final stop before the experience ends.'
@@ -1059,7 +1109,8 @@ const ExperienceDetailPage = () => {
   /* ── Itinerary ── */
   const hostItinerary        = Array.isArray(exp.itinerary) ? exp.itinerary : []
   const hasHostItinerary     = hostItinerary.length > 0
-  const experiencePoint      = toLatLng(exp.location?.coordinates)
+  const geocodedExperiencePoint = resolveBestLatLng(exp.location?.coordinates, areaCenter) || toLatLng(exp.location?.coordinates)
+  const experiencePoint      = areaCenter || geocodedExperiencePoint
 
   const fallbackRouteStops = [{
     key: 'this', name: resolvedTitle,
@@ -1118,7 +1169,7 @@ const ExperienceDetailPage = () => {
   }))
   const itineraryPath   = itineraryMarkers.map((m) => m.position)
   const mapCityKey      = coordinateStops.find((s) => s.city)?.city?.toLowerCase().trim() || routeStops.find((s) => s.city)?.city?.toLowerCase().trim()
-  const itineraryCenter = itineraryMarkers[0]?.position || CITY_COORDS[mapCityKey] || areaCenter
+  const itineraryCenter = CITY_COORDS[mapCityKey] || areaCenter || itineraryMarkers[0]?.position
 
   /* ── Overview facts ── */
   const overviewFacts = [
@@ -1491,7 +1542,7 @@ const ExperienceDetailPage = () => {
                   )}
                   {host?._id && (
                     <div className="mt-2">
-                      <Link to={`/hosts/${host._id}`} className="text-xs text-slate-600 underline underline-offset-2">Read the host story profile</Link>
+                      <Link to={`/hosts/${host._id}`} className="text-xs text-slate-600 underline underline-offset-2">View host details, stories, pathways, and reviews</Link>
                     </div>
                   )}
                 </div>

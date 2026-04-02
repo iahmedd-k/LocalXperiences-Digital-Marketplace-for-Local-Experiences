@@ -112,30 +112,30 @@ const HostBookingsPage = () => {
       <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-5">
           <div>
             <Link to="/host/dashboard" className="text-xs text-emerald-600">
               ← Dashboard
             </Link>
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900 mt-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
               Bookings
             </h1>
           </div>
 
           {counts.pending > 0 && (
-            <div className="text-xs sm:text-sm bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-lg text-yellow-700">
+            <div className="text-xs sm:text-sm bg-amber-50 px-3 py-1.5 rounded-full text-amber-700 font-semibold">
               {counts.pending} pending
             </div>
           )}
         </div>
 
         {/* Search + Tabs */}
-        <div className="flex flex-col gap-3 mb-5">
+        <div className="flex flex-col gap-3 mb-6">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search..."
-            className="w-full border rounded-lg px-3 py-2 text-sm"
+            placeholder="Search guests or experiences..."
+            className="w-full rounded-2xl bg-white px-4 py-3 text-sm text-slate-700 shadow-sm outline-none ring-1 ring-slate-200 transition placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-200"
           />
 
           <div className="flex flex-wrap gap-2">
@@ -143,10 +143,10 @@ const HostBookingsPage = () => {
               <button
                 key={s}
                 onClick={() => setTab(s)}
-                className={`text-xs px-2 py-1 rounded-md capitalize ${
+                className={`text-xs px-3 py-2 rounded-full capitalize font-semibold transition ${
                   tab === s
-                    ? 'bg-emerald-500 text-white'
-                    : 'bg-white border text-gray-600'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 {s} ({counts[s]})
@@ -167,14 +167,14 @@ const HostBookingsPage = () => {
               const guests = b.guestCount ?? b.guests ?? 0
 
               return (
-                <div key={b._id} className="bg-white p-4 rounded-xl border">
+                <div key={b._id} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
 
                   <div className="flex gap-3">
                     <Avatar name={b.userId?.name} size="sm" />
 
                     <div className="flex-1">
                       <div className="flex justify-between items-center">
-                        <p className="text-sm font-semibold truncate">
+                        <p className="text-sm font-semibold text-slate-900 truncate">
                           {b.userId?.name || 'Guest'}
                         </p>
                         <Badge variant={statusVariant[b.status]}>
@@ -182,11 +182,11 @@ const HostBookingsPage = () => {
                         </Badge>
                       </div>
 
-                      <p className="text-xs text-gray-500 truncate">
+                      <p className="text-xs text-slate-500 truncate">
                         {b.experienceId?.title}
                       </p>
 
-                      <div className="text-xs text-gray-500 mt-2 space-y-1">
+                      <div className="text-xs text-slate-500 mt-2 space-y-1">
                         <p>Date: {b.slot?.date ? formatDate(b.slot.date) : '—'}</p>
                         <p>Guests: {guests}</p>
                         <p className="text-emerald-600 font-semibold">
@@ -222,7 +222,7 @@ const HostBookingsPage = () => {
                         </Button>
 
                         <select
-                          className="text-xs border rounded px-2 py-1"
+                          className="text-xs rounded-full bg-slate-100 px-3 py-2 text-slate-700 outline-none transition hover:bg-slate-200"
                           onChange={(e) =>
                             overrideMutation.mutate({
                               id: b._id,

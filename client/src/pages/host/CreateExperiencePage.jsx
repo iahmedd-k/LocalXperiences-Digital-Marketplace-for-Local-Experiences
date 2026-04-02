@@ -95,7 +95,7 @@ const CreateExperiencePage = () => {
   useEffect(() => {
     if (!user?.bio?.trim() || !user?.phone?.trim()) {
       toast.error('Please complete your host profile before creating an experience.')
-      navigate('/host/setup-profile', { replace: true })
+      navigate('/host/profile', { replace: true })
     }
   }, [user, navigate])
 

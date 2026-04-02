@@ -57,6 +57,10 @@ const HostLayout = () => {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [location.pathname])
+
   const { data: bookingsRaw } = useQuery({
     queryKey: ['hostBookings'],
     queryFn: () => getAllHostBookings(),
@@ -64,7 +68,7 @@ const HostLayout = () => {
   const bookings = bookingsRaw || []
   const pendingCount = bookings.filter((b) => b.status === 'pending').length
 
-  const path = location.pathname
+  const path = location.pathname.replace(/\/+$/, '') || '/'
   const isMobile = windowWidth <= 1024
 
   // Responsive styles
@@ -141,7 +145,6 @@ const HostLayout = () => {
       <main style={mainStyle}>
         <Navbar isDashboard={true} onMenuToggle={() => setSidebarOpen(true)} />
         <div style={{ 
-          marginTop: 72, // height of navbar
           padding: windowWidth <= 640 ? '12px 16px 30px' : '20px 32px 40px',
           maxWidth: 1400, 
           margin: '0 auto', 
@@ -157,4 +160,3 @@ const HostLayout = () => {
 }
 
 export default HostLayout
-
