@@ -20,6 +20,7 @@ const allowedOrigins = [
   'http://localhost:5176',
   'http://localhost:5177',
   'http://localhost:5178',
+  "https://local-xperiences-digital-marketplac.vercel.app/",
 ].filter(Boolean);
 
 app.use(cors({
