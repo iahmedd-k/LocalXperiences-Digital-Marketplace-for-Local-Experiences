@@ -466,7 +466,7 @@ const ReserveCard = ({
                 You already have a booking for this experience.
               </div>
               {checkInEligibleBooking ? (
-                <CheckInButton bookingId={checkInEligibleBooking._id} isAuthenticated={isAuthenticated} />
+                <CheckInButton bookingId={checkInEligibleBooking._id} isAuthenticated={effectiveIsAuthenticated} />
               ) : (
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-600">
                   Check-in will appear here on the day of your booking.
@@ -493,7 +493,7 @@ const ReserveCard = ({
               </div>
               <button type="button" onClick={handleProceedToCheckout}
                 className="mt-2.5 w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 active:scale-[0.98]">
-                {isAuthenticated ? 'Reserve now' : 'Sign in to reserve'}
+                {effectiveIsAuthenticated ? 'Reserve now' : 'Sign in to reserve'}
               </button>
             </>
           ) : flowState === 'unavailable' ? (
@@ -744,6 +744,8 @@ const ExperienceDetailPage = () => {
   const location       = useLocation()
   const queryClient    = useQueryClient()
   const { isAuthenticated, user } = useSelector((state) => state.auth)
+  const hasStoredSession = typeof window !== 'undefined' && Boolean(window.localStorage.getItem('token'))
+  const effectiveIsAuthenticated = isAuthenticated || hasStoredSession
   const { isSaved, toggleWishlist, isPendingFor } = useWishlist()
   const { currency } = useCurrency()
   const similarExperiences = [] // Fallback array in absence of API fetch
@@ -815,7 +817,7 @@ const ExperienceDetailPage = () => {
   const { data: myBookings = [] } = useQuery({
     queryKey: ['myBookings'],
     queryFn:  () => getMyBookings().then((r) => r.data.data),
-    enabled:  isAuthenticated,
+    enabled:  effectiveIsAuthenticated,
   })
 
 
@@ -928,7 +930,7 @@ const ExperienceDetailPage = () => {
     navigate('/login', { state: { from: `${location.pathname}${location.search || ''}#${sectionId}` } })
 
   const requireAuth = (sectionId) => {
-    if (isAuthenticated) return true
+    if (effectiveIsAuthenticated) return true
     sendToLogin(sectionId)
     return false
   }
@@ -949,7 +951,7 @@ const ExperienceDetailPage = () => {
   }
 
   const handleSaveExperience = () => {
-    if (!isAuthenticated) { sendToLogin('overview'); return }
+    if (!effectiveIsAuthenticated) { sendToLogin('overview'); return }
     toggleWishlist(id)
   }
 
@@ -985,7 +987,7 @@ const ExperienceDetailPage = () => {
   const eligibleReviewBooking = matchingBookings.find((b) => b.status === 'completed' && !b.reviewLeft) || null
   const reviewedBooking       = matchingBookings.find((b) => b.status === 'completed' && b.reviewLeft) || null
   const hasBooking            = Boolean(exp?.myBookingId || activeBooking?._id)
-  const canReview             = isAuthenticated
+  const canReview             = effectiveIsAuthenticated
   const bookingId             = exp?.myBookingId || eligibleReviewBooking?._id
   const catLabel              = CATEGORIES.find((c) => c.value === exp?.category)?.label || exp?.category || 'Experience'
   const cityKey               = exp?.location?.city?.toLowerCase().trim()
@@ -1011,7 +1013,7 @@ const ExperienceDetailPage = () => {
     meetingAndPickup:  activeTranslation?.meetingAndPickup  || exp?.detailsSections?.meetingAndPickup  || '',
   }
 
-  const reviewCallout = !isAuthenticated
+  const reviewCallout = !effectiveIsAuthenticated
     ? 'Sign in to leave a review.'
     : reviewedBooking
       ? 'You have already reviewed one of your completed bookings, but you can still share another signed-in review here.'
@@ -1389,7 +1391,7 @@ const ExperienceDetailPage = () => {
               selectedSlot={selectedSlot}
               maxSelectableGuests={maxSelectableGuests}
               hasBooking={hasBooking}
-              isAuthenticated={isAuthenticated}
+              isAuthenticated={effectiveIsAuthenticated}
               location={location}
               averageBookAheadDays={averageBookAheadDays}
               requireAuth={requireAuth}
@@ -1572,7 +1574,7 @@ const ExperienceDetailPage = () => {
               onToggleReviewLike={toggleReviewLike}
               renderStars={(value) => <Stars value={value} />}
               formatDate={formatDate}
-              isAuthenticated={isAuthenticated}
+              isAuthenticated={effectiveIsAuthenticated}
               reviewCallout={reviewCallout}
               canReview={canReview}
               showReviewComposer={showReviewComposer}
