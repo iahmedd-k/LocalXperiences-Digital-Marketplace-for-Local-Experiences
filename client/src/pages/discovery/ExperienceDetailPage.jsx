@@ -7,9 +7,10 @@ import {
   CircleX, Clock3, Heart, MapPin, Share2, ShieldCheck, Users, WalletCards,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import api from '../../config/api.js'
 
 import { getExperienceById, getExperiences } from '../../services/experienceService.js'
-import { getMyBookings } from '../../services/bookingService.js'
+import { getMyBookings, getGroupBooking, joinGroupBooking, checkInBooking } from '../../services/bookingService.js'
 import { answerQuestion, askQuestion, getQnA } from '../../services/qnaService.js'
 import { createComment, deleteComment, getComments } from '../../services/commentService.js'
 import { createReview, getReviews } from '../../services/reviewService.js'
@@ -166,24 +167,31 @@ const toSlotDateTime = (dateValue, startTime) => {
   return date
 }
 
+const isTodaySlot = (dateValue) => {
+  if (!dateValue) return false
+  const slotDate = new Date(dateValue)
+  if (!Number.isFinite(slotDate.getTime())) return false
+  const today = new Date()
+  return (
+    slotDate.getFullYear() === today.getFullYear() &&
+    slotDate.getMonth() === today.getMonth() &&
+    slotDate.getDate() === today.getDate()
+  )
+}
+
 /* ─── CheckInButton ──────────────────────────────────────────── */
 
-const CheckInButton = ({ experienceId, isAuthenticated }) => {
+const CheckInButton = ({ bookingId, isAuthenticated }) => {
   const [status, setStatus] = useState('idle') // idle | loading | success | error
   const [message, setMessage] = useState('')
-  const { user } = useSelector((s) => s.auth)
 
   const handleCheckIn = async () => {
     if (!isAuthenticated) { toast.error('Sign in to check in'); return }
+    if (!bookingId) { toast.error('No eligible booking found for check-in'); return }
     setStatus('loading')
     try {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`/api/checkins/experience/${experienceId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      })
-      const data = await res.json()
-      if (!data.success) { setStatus('error'); setMessage(data.message); toast.error(data.message); return }
+      const { data } = await checkInBooking(bookingId)
+      if (!data?.success) { setStatus('error'); setMessage(data?.message || 'Check-in failed'); toast.error(data?.message || 'Check-in failed'); return }
       setStatus('success')
       setMessage(`Checked in! Total: ${data.data.checkInCount}`)
       toast.success(`🎉 Check-in #${data.data.checkInCount} recorded!`)
@@ -199,7 +207,7 @@ const CheckInButton = ({ experienceId, isAuthenticated }) => {
 
   if (status === 'success') {
     return (
-      <div className="rounded-lg border border-emerald-300 bg-gradient-to-r from-emerald-50 to-green-50 px-3 py-2.5 text-xs text-emerald-800 flex items-center gap-2">
+      <div className="rounded-lg border border-emerald-300 bg-linear-to-r from-emerald-50 to-green-50 px-3 py-2.5 text-xs text-emerald-800 flex items-center gap-2">
         <span className="text-base">✅</span>
         <span className="font-semibold">{message}</span>
       </div>
@@ -211,7 +219,7 @@ const CheckInButton = ({ experienceId, isAuthenticated }) => {
       type="button"
       onClick={handleCheckIn}
       disabled={status === 'loading'}
-      className="w-full rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-amber-600 hover:to-orange-600 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 shadow-sm"
+      className="w-full rounded-lg bg-linear-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-amber-600 hover:to-orange-600 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 shadow-sm"
     >
       {status === 'loading' ? (
         <><span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> Checking in…</>
@@ -258,9 +266,12 @@ const ReserveCard = ({
     queryKey: ['groupBooking', exp?._id, selectedSlot?._id],
     queryFn: async () => {
       if (!exp?.bookingSettings?.allowCollaborativeBookings || !selectedSlot?._id) return null
-      const res = await fetch(`/api/bookings/group/${exp._id}-${selectedSlot._id}`)
-      if (!res.ok) return null
-      return res.json().then((r) => r.data)
+      try {
+        const res = await getGroupBooking(`${exp._id}-${selectedSlot._id}`)
+        return res?.data?.data || null
+      } catch {
+        return null
+      }
     },
     enabled: Boolean(exp?.bookingSettings?.allowCollaborativeBookings && selectedSlot?._id),
   })
@@ -357,14 +368,9 @@ const ReserveCard = ({
   const handleJoinGroup = async () => {
     setJoiningGroup(true)
     try {
-      const res  = await fetch(`/api/bookings/group/${groupCode}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
-      const data = await res.json()
-      setGroupStatus(data.success ? 'Joined!' : data.message)
-      if (data.success) refetchGroupBooking()
+      const { data } = await joinGroupBooking(groupCode, {})
+      setGroupStatus(data?.success ? 'Joined!' : data?.message)
+      if (data?.success) refetchGroupBooking()
     } catch {
       setGroupStatus('Error joining')
     }
@@ -373,7 +379,6 @@ const ReserveCard = ({
 
   const infoCards = [
     { key: 'cancellation', icon: <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />, title: 'Free cancellation',   text: 'Up to 24 hrs before start',     onClick: () => setShowCancellationModal(true) },
-    { key: 'later',        icon: <WalletCards  className="h-3.5 w-3.5 text-amber-600"  />, title: 'Reserve now, pay later', text: 'No upfront charge',            onClick: () => setShowReserveLaterModal(true) },
     { key: 'availability', icon: <CalendarDays className="h-3.5 w-3.5 text-sky-600"    />, title: `Book ${averageBookAheadDays} days ahead on average`, text: 'Secure your spot early' },
     ...(exp?.bookingSettings?.allowCollaborativeBookings
       ? [{ key: 'group', icon: <Users className="h-3.5 w-3.5 text-violet-600" />, title: 'Group booking available', text: 'Friends can split costs' }]
@@ -454,7 +459,13 @@ const ReserveCard = ({
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs text-emerald-800">
                 You already have a booking for this experience.
               </div>
-              <CheckInButton experienceId={exp?._id} isAuthenticated={isAuthenticated} />
+              {checkInEligibleBooking ? (
+                <CheckInButton bookingId={checkInEligibleBooking._id} isAuthenticated={isAuthenticated} />
+              ) : (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-600">
+                  Check-in will appear here on the day of your booking.
+                </div>
+              )}
             </div>
           ) : flowState === 'confirmed' && activeSlot ? (
             <>
@@ -532,7 +543,7 @@ const ReserveCard = ({
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-[2px]"
           onClick={(e) => { if (e.target === e.currentTarget) setPickerOpen(false) }}
         >
-          <div className="w-full max-w-[760px] rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
+          <div className="w-full max-w-190 rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
               <div>
@@ -690,7 +701,7 @@ const ReserveCard = ({
                     )}
                   </>
                 ) : (
-                  <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 min-h-[200px]">
+                  <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 min-h-50">
                     <div className="text-center">
                       <CalendarDays className="h-7 w-7 text-slate-300 mx-auto mb-2" />
                       <p className="text-xs text-slate-600">Pick a date first</p>
@@ -761,8 +772,8 @@ const ExperienceDetailPage = () => {
   const [likedReviews,             setLikedReviews]             = useState({})
   const [communityComment,         setCommunityComment]         = useState('')
   const [selectedLanguage,         setSelectedLanguage]         = useState('default')
-  const [showCancellationModal,    setShowCancellationModal]    = useState(false)
   const [showReserveLaterModal,    setShowReserveLaterModal]    = useState(false)
+  const [showCancellationModal,    setShowCancellationModal]    = useState(false)
   const [guests]                                                = useState(1)
 
   /* ── Queries ── */
@@ -947,7 +958,12 @@ const ExperienceDetailPage = () => {
 
   /* ── Derived data (after early returns, no hooks below this line) ── */
   const matchingBookings      = myBookings.filter((b) => String(b.experienceId?._id || b.experienceId) === String(exp?._id || ''))
-  const activeBooking         = matchingBookings.find((b) => ['pending', 'confirmed'].includes(b.status)) || null
+  const activeBooking         = matchingBookings.find((b) => ['pending', 'confirmed', 'pending_payment', 'partially_paid', 'completed'].includes(b.status)) || null
+  const checkInEligibleBooking = matchingBookings.find((b) =>
+    ['confirmed', 'completed', 'pending_payment', 'partially_paid'].includes(b.status) &&
+    isTodaySlot(b?.slot?.date) &&
+    b?.checkIn?.status !== 'checked_in'
+  ) || null
   const eligibleReviewBooking = matchingBookings.find((b) => b.status === 'completed' && !b.reviewLeft) || null
   const reviewedBooking       = matchingBookings.find((b) => b.status === 'completed' && b.reviewLeft) || null
   const hasBooking            = Boolean(exp?.myBookingId || activeBooking?._id)
@@ -967,7 +983,7 @@ const ExperienceDetailPage = () => {
     : null
 
   const translations      = Array.isArray(exp?.translations) ? exp.translations : []
-  const languagesSupported = Array.isArray(exp?.languagesSupported) ? exp.languagesSupported : []
+  const languagesSupported = []
   const activeTranslation = selectedLanguage === 'default' ? null : translations.find((t) => t.languageCode === selectedLanguage)
   const resolvedTitle       = activeTranslation?.title       || exp?.title
   const resolvedDescription = activeTranslation?.description || exp?.description
@@ -1044,23 +1060,6 @@ const ExperienceDetailPage = () => {
     : null
 
   /* ── Feature highlights ── */
-  const featureHighlights = [
-    exp?.storytellingProfile?.hostStory
-      ? { title: 'Local storytelling', description: 'Host story, insider tips, and local perspective included.' }
-      : null,
-    exp?.experiencePathways?.length
-      ? { title: 'Experience pathways', description: `${exp.experiencePathways.length} suggested journey${exp.experiencePathways.length === 1 ? '' : 's'} to plan a bigger day.` }
-      : null,
-    exp?.bookingSettings?.allowCollaborativeBookings
-      ? { title: 'Collaborative groups', description: 'Friends can create or join a shared booking from checkout.' }
-      : null,
-    exp?.microExperience?.isEnabled
-      ? { title: 'Micro-experience', description: exp.microExperience.label || 'Short-format experience for lighter schedules.' }
-      : null,
-    languagesSupported.length || translations.length
-      ? { title: 'Language support', description: languagesSupported.length ? languagesSupported.join(', ') : 'Translated descriptions available.' }
-      : null,
-  ].filter(Boolean)
 
   /* ── Detail FAQ ── */
   const detailFaqItems = [
@@ -1301,7 +1300,7 @@ const ExperienceDetailPage = () => {
     <div className="min-h-screen bg-[#f7f8fa]">
       <Navbar />
 
-      <div className="mx-auto max-w-screen-xl px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
         {/* Breadcrumb */}
         <nav className="mb-3 flex items-center gap-1.5 text-[11px] text-slate-400">
           <Link to="/" className="hover:text-emerald-600">Home</Link>
@@ -1341,25 +1340,6 @@ const ExperienceDetailPage = () => {
               Up to {exp.groupSize?.max || 10}
             </span>
 
-            {exp?.microExperience?.isEnabled && (
-              <span className="inline-flex shrink-0 items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
-                {exp.microExperience.label || 'Micro-experience'}
-              </span>
-            )}
-
-            {translations.length > 0 && (
-              <select
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600 outline-none focus:border-emerald-400"
-              >
-                <option value="default">Default language</option>
-                {translations.map((t) => (
-                  <option key={t.languageCode} value={t.languageCode}>{t.languageLabel}</option>
-                ))}
-              </select>
-            )}
-
             <div className="ml-auto inline-flex shrink-0 items-center gap-1.5">
               <button type="button" onClick={handleShare}
                 className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-1 text-[11px] text-slate-600 transition hover:border-emerald-300 hover:text-emerald-700">
@@ -1378,18 +1358,6 @@ const ExperienceDetailPage = () => {
         <div className="mb-4">
           <ExperienceGallery photos={exp.photos} title={resolvedTitle} />
         </div>
-
-        {/* Feature highlights */}
-        {featureHighlights.length > 0 && (
-          <section className="mb-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-            {featureHighlights.map((item) => (
-              <article key={item.title} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
-                <p className="text-[10px] font-medium uppercase tracking-widest text-emerald-700">{item.title}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-600">{item.description}</p>
-              </article>
-            ))}
-          </section>
-        )}
 
         {/* Main grid */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_292px] lg:items-start xl:gap-5">
@@ -1457,7 +1425,7 @@ const ExperienceDetailPage = () => {
                 </div>
               )}
 
-              {(exp.storytellingProfile?.hostStory || exp.storytellingProfile?.insiderTips?.length || exp.storytellingProfile?.photoMoments?.length || exp?.microExperience?.teaser) && (
+              {false && (exp.storytellingProfile?.hostStory || exp.storytellingProfile?.insiderTips?.length || exp.storytellingProfile?.photoMoments?.length || exp?.microExperience?.teaser) && (
                 <div className="mt-4 border-t border-slate-100 pt-4">
                   <h3 className="text-xs font-medium text-slate-800 mb-2">Host stories &amp; insider context</h3>
                   {exp.storytellingProfile?.hostStory && <p className="text-xs leading-6 text-slate-600">{exp.storytellingProfile.hostStory}</p>}
@@ -1481,7 +1449,7 @@ const ExperienceDetailPage = () => {
                 </div>
               )}
 
-              {(languagesSupported.length > 0 || translations.length > 0) && (
+              {false && (languagesSupported.length > 0 || translations.length > 0) && (
                 <div className="mt-4 border-t border-slate-100 pt-4">
                   <h3 className="text-xs font-medium text-slate-800 mb-2">Language support</h3>
                   {languagesSupported.length > 0 && (
@@ -1542,7 +1510,7 @@ const ExperienceDetailPage = () => {
                   )}
                   {host?._id && (
                     <div className="mt-2">
-                      <Link to={`/hosts/${host._id}`} className="text-xs text-slate-600 underline underline-offset-2">View host details, stories, pathways, and reviews</Link>
+                      <Link to={`/hosts/${host._id}`} className="text-xs text-slate-600 underline underline-offset-2">View host details, stories, and reviews</Link>
                     </div>
                   )}
                 </div>
@@ -1645,22 +1613,6 @@ const ExperienceDetailPage = () => {
                 setReviewLanguageFilter('english'); setShowReviewFilters(false)
               }}
             />
-
-            {/* Experience pathways */}
-            {exp?.experiencePathways?.length > 0 && (
-              <DetailSection eyebrow="Pathways" title="Suggested journeys">
-                <div className="grid gap-2 md:grid-cols-2">
-                  {exp.experiencePathways.map((pathway, index) => (
-                    <article key={`${pathway.title}-${index}`} className="rounded-xl border border-slate-200 bg-white p-3">
-                      <p className="text-[10px] font-medium uppercase tracking-widest text-rose-500">{pathway.highlight || 'Suggested route'}</p>
-                      <h3 className="mt-1 text-xs font-medium text-slate-900">{pathway.title}</h3>
-                      {pathway.durationLabel && <p className="mt-0.5 text-[11px] text-slate-400">{pathway.durationLabel}</p>}
-                      {pathway.summary && <p className="mt-1.5 text-xs leading-5 text-slate-600">{pathway.summary}</p>}
-                    </article>
-                  ))}
-                </div>
-              </DetailSection>
-            )}
 
           </div>
         </div>

@@ -19,7 +19,6 @@ import StoriesPage          from '../pages/discovery/StoriesPage.jsx'
 import StoryDetailPage      from '../pages/discovery/StoryDetailPage.jsx'
 import PathwayDetailPage    from '../pages/discovery/PathwayDetailPage.jsx'
 import AboutPage            from '../pages/discovery/AboutPage.jsx'
-import ContactPage          from '../pages/discovery/ContactPage.jsx'
 import BecomeHostPage       from '../pages/discovery/BecomeHostPage.jsx'
 
 // Pages — booking
@@ -42,6 +41,7 @@ import EditExperiencePage   from '../pages/host/EditExperiencePage.jsx'
 import HostBookingsPage     from '../pages/host/HostBookingsPage.jsx'
 import HostReviewsPage      from '../pages/host/HostReviewsPage.jsx'
 import HostExperiencesPage  from '../pages/host/HostExperiencesPage.jsx'
+import HostWalletPage       from '../pages/host/HostWalletPage.jsx'
 import HostLayout           from '../layouts/HostLayout.jsx'
 
 // Pages — pathways
@@ -62,7 +62,6 @@ const AppRouter = () => (
       <Route path="/pathways"                element={<PathwayBrowsePage />} />
       <Route path="/pathways/:id"            element={<PathwayDetailPage />} />
       <Route path="/about"                   element={<AboutPage />} />
-      <Route path="/contact"                 element={<ContactPage />} />
       <Route path="/become-host"             element={<BecomeHostPage />} />
       <Route path="/login"                   element={<LoginPage />} />
       <Route path="/signup"                    element={<SignupPage />} />
@@ -93,6 +92,7 @@ const AppRouter = () => (
           <Route path="stories/create"     element={<CreateStoryPage />} />
           <Route path="experiences/:id/edit" element={<EditExperiencePage />} />
           <Route path="bookings"           element={<HostBookingsPage />} />
+          <Route path="wallet"             element={<HostWalletPage />} />
           <Route path="reviews"            element={<HostReviewsPage />} />
           <Route path="profile"            element={<ProfilePage hideLayout={true} />} />
         </Route>

@@ -6,7 +6,14 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import toast from 'react-hot-toast'
 import { getExperienceById } from '../../services/experienceService.js'
-import { createPaymentIntent, confirmBooking } from '../../services/bookingService.js'
+import {
+  createPaymentIntent,
+  confirmBooking,
+  getGroupBooking,
+  getBookingById,
+  createGroupSharePaymentIntent,
+  confirmGroupSharePayment,
+} from '../../services/bookingService.js'
 import { getErrorMessage } from '../../utils/helpers.js'
 import { formatPrice, formatDuration } from '../../utils/formatters.js'
 import Navbar from '../../components/common/Navbar.jsx'
@@ -14,9 +21,15 @@ import Spinner from '../../components/common/Spinner.jsx'
 
 /* ─── Stripe ─────────────────────────────────────────────── */
 const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ''
-const stripePromise = STRIPE_KEY
-  ? loadStripe(STRIPE_KEY).catch(() => null)
-  : Promise.resolve(null)
+const stripeCacheKey = '__localXperiencesStripePromise__'
+const stripePromise = (() => {
+  if (!globalThis[stripeCacheKey]) {
+    globalThis[stripeCacheKey] = STRIPE_KEY
+      ? loadStripe(STRIPE_KEY).catch(() => null)
+      : Promise.resolve(null)
+  }
+  return globalThis[stripeCacheKey]
+})()
 
 /* ─── Helpers ────────────────────────────────────────────── */
 const formatSlotDate = (d) =>
@@ -36,6 +49,53 @@ const parseEmails = (raw = '', leaderEmail = '') =>
       .filter(Boolean)
       .filter((e) => e !== leaderEmail.trim().toLowerCase()),
   ))
+
+const getCheckoutAmounts = ({
+  experience,
+  guests,
+  pricing,
+  bookingOptions,
+  contact,
+  groupShareMode = false,
+}) => {
+  const friendEmails = parseEmails(bookingOptions?.collaboration?.invitedEmails, contact?.email)
+  const allEmails = [contact?.email?.trim().toLowerCase(), ...friendEmails].filter(Boolean)
+  const isCollab = bookingOptions?.collaboration?.joinMode !== 'solo' || groupShareMode
+  const memberCount = isCollab && allEmails.length > 1 ? allEmails.length : Math.max(1, Number(guests || 1))
+
+  const bookingTotal = pricing?.totalAfterDiscount != null
+    ? pricing.totalAfterDiscount / 100
+    : Number(experience?.price || 0) * Number(guests || 1)
+  const bookingDeposit = pricing?.amountDueNow != null
+    ? pricing.amountDueNow / 100
+    : bookingTotal
+  const bookingRemaining = pricing?.remainingAmount != null
+    ? pricing.remainingAmount / 100
+    : Math.max(0, bookingTotal - bookingDeposit)
+
+  const shareTotal = isCollab
+    ? Math.round((bookingTotal / memberCount) * 100) / 100
+    : bookingTotal
+  const shareDeposit = isCollab
+    ? Math.round((bookingDeposit / memberCount) * 100) / 100
+    : bookingDeposit
+  const shareRemaining = isCollab
+    ? Math.round((bookingRemaining / memberCount) * 100) / 100
+    : bookingRemaining
+
+  return {
+    friendEmails,
+    allEmails,
+    isCollab,
+    memberCount,
+    bookingTotal,
+    bookingDeposit,
+    bookingRemaining,
+    shareTotal,
+    shareDeposit,
+    shareRemaining,
+  }
+}
 
 /* ─── Icons ──────────────────────────────────────────────── */
 const LockIcon = () => (
@@ -87,6 +147,13 @@ const COLLAB_STEPS = [
   { id: 'options', label: 'Options' },
   { id: 'group',   label: 'Group' },
   { id: 'invite',  label: 'Invite' },
+  { id: 'payment', label: 'Payment' },
+  { id: 'done',    label: 'Confirmed' },
+]
+const JOIN_GROUP_STEPS = [
+  { id: 'contact', label: 'Contact' },
+  { id: 'options', label: 'Options' },
+  { id: 'group',   label: 'Group' },
   { id: 'payment', label: 'Payment' },
   { id: 'done',    label: 'Confirmed' },
 ]
@@ -265,7 +332,7 @@ const GroupPanel = ({ bookingOptions, setBookingOptions, onNext, onBack }) => {
   const c   = bookingOptions.collaboration
   const upd = (patch) => setBookingOptions((p) => ({ ...p, collaboration: { ...p.collaboration, ...patch } }))
   const isJoin = c.joinMode === 'join'
-  const valid  = c.groupName.trim() && (isJoin ? c.groupCode.trim() : true)
+  const valid  = isJoin ? c.groupCode.trim() : c.groupName.trim()
 
   return (
     <div>
@@ -369,16 +436,16 @@ const InvitePanel = ({ bookingOptions, setBookingOptions, contact, pricing, expe
   const removeEmail = (e) => updateEmails(friendEmails.filter((x) => x !== e))
   const handleKey   = (ev) => { if (ev.key === 'Enter' || ev.key === ',') { ev.preventDefault(); addEmail() } }
 
-  const allEmails = [contact.email.trim().toLowerCase(), ...friendEmails].filter(Boolean)
-  // Convert cents to dollars if pricing is present
-  const total = pricing?.totalAfterDiscount != null
-    ? pricing.totalAfterDiscount / 100
-    : experience.price * guests
-  const perShare = allEmails.length > 1
-    ? Math.round((total / allEmails.length) * 100) / 100
-    : total
+  const { allEmails, shareTotal } = getCheckoutAmounts({
+    experience,
+    guests,
+    pricing,
+    bookingOptions,
+    contact,
+  })
   const isJoin    = bookingOptions.collaboration.joinMode === 'join'
-  const canNext   = isJoin || friendEmails.length > 0
+  const expectedFriends = Math.max(0, Number(guests || 1) - 1)
+  const canNext   = isJoin || friendEmails.length === expectedFriends
 
   return (
     <div>
@@ -414,6 +481,11 @@ const InvitePanel = ({ bookingOptions, setBookingOptions, contact, pricing, expe
         </button>
       </div>
       <p className="mb-4 text-[11px] text-slate-400">Press Enter or comma to add. Duplicates are ignored.</p>
+      {!isJoin && (
+        <p className={`mb-4 text-[11px] ${friendEmails.length === expectedFriends ? 'text-emerald-600' : 'text-amber-600'}`}>
+          This booking is for {guests} guests, so add {expectedFriends} friend email{expectedFriends === 1 ? '' : 's'} before continuing.
+        </p>
+      )}
 
       {allEmails.length > 1 && (
         <div className="mb-2 rounded-xl border border-emerald-100 bg-emerald-50 p-3">
@@ -429,7 +501,7 @@ const InvitePanel = ({ bookingOptions, setBookingOptions, contact, pricing, expe
                     <span className="shrink-0 rounded-full bg-emerald-200 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-emerald-800">You</span>
                   )}
                 </div>
-                <span className="shrink-0 font-semibold text-emerald-800">{formatPrice(perShare)}</span>
+                <span className="shrink-0 font-semibold text-emerald-800">{formatPrice(shareTotal)}</span>
               </div>
             ))}
           </div>
@@ -438,7 +510,7 @@ const InvitePanel = ({ bookingOptions, setBookingOptions, contact, pricing, expe
 
       <NavRow showBack onBack={onBack}>
         <Btn onClick={onNext} disabled={!canNext}>
-          {canNext ? 'Continue to payment →' : 'Add at least one friend'}
+          {canNext ? 'Continue to payment →' : `Add ${expectedFriends} friend email${expectedFriends === 1 ? '' : 's'}`}
         </Btn>
       </NavRow>
     </div>
@@ -450,7 +522,7 @@ const InvitePanel = ({ bookingOptions, setBookingOptions, contact, pricing, expe
 ══════════════════════════════════════════════════════════════ */
 const PaymentPanel = ({
   experience, selectedSlot, guests, pricing, contact,
-  clientSecret, paymentIntentId, bookingOptions, onBack, onSuccess,
+  clientSecret, paymentIntentId, bookingOptions, onBack, onSuccess, groupShareMode = false,
 }) => {
   const [payMode, setPayMode] = useState('full')
   const [loading, setLoading] = useState(false)
@@ -458,30 +530,27 @@ const PaymentPanel = ({
   const elements    = useElements()
   const queryClient = useQueryClient()
 
-  // Convert cents to dollars if pricing is present
-  // Calculate per-person share for split payments
-  const friendEmails = parseEmails(bookingOptions?.collaboration?.invitedEmails, contact.email);
-  const allEmails = [contact.email.trim().toLowerCase(), ...friendEmails].filter(Boolean);
-  const groupSize = (bookingOptions.splitPayment && allEmails.length > 1) ? allEmails.length : 1;
-  const total = pricing?.totalAfterDiscount != null
-    ? (pricing.totalAfterDiscount / 100) / groupSize
-    : (experience.price * guests) / groupSize;
-  const deposit = pricing?.amountDueNow != null
-    ? (pricing.amountDueNow / 100) / groupSize
-    : total;
-  const remaining = pricing?.remainingAmount != null
-    ? (pricing.remainingAmount / 100) / groupSize
-    : 0;
-  const hasSplit  = pricing?.splitPayment
-  const dueNow    = payMode === 'partial' && hasSplit ? deposit : total
-
-  // friendEmails and allEmails already declared above for per-person logic
+  const {
+    allEmails,
+    bookingTotal,
+    shareTotal,
+    shareDeposit,
+    shareRemaining,
+  } = getCheckoutAmounts({
+    experience,
+    guests,
+    pricing,
+    bookingOptions,
+    contact,
+    groupShareMode,
+  })
+  const hasSplit  = pricing?.splitPayment && !groupShareMode
+  const dueNow    = payMode === 'partial' && hasSplit ? shareDeposit : shareTotal
 
   const buildSplitPayments = () => {
-    if (!bookingOptions?.splitPayment) return []
     if (bookingOptions?.collaboration?.joinMode !== 'create') return []
     if (!allEmails.length) return []
-    const totalCents = Math.round(total * 100)
+    const totalCents = Math.round(bookingTotal * 100)
     const base = Math.floor(totalCents / allEmails.length)
     return allEmails.map((email, i) => ({
       email,
@@ -511,22 +580,31 @@ const PaymentPanel = ({
       if (error && isProd) { toast.error(error.message || 'Payment failed'); setLoading(false); return }
       if (isProd && paymentIntent?.status !== 'succeeded') { toast.error('Payment not completed'); setLoading(false); return }
 
-      const { data } = await confirmBooking({
-        experienceId:    experience._id,
-        guestCount:      Number(guests),
-        slot:            { date: selectedSlot.date, startTime: selectedSlot.startTime },
-        splitPayment:    bookingOptions.splitPayment,
-        collaboration:   bookingOptions.collaboration,
-        splitPayments:   buildSplitPayments(),
-        contact:         { ...contact, phone: `${contact.phoneCountry} ${contact.phoneNumber}`.trim() },
-        paymentIntentId: paymentIntentId || paymentIntent?.id,
-      })
+      const payloadPaymentIntentId = paymentIntentId || paymentIntent?.id
+      const response = groupShareMode
+        ? await confirmGroupSharePayment(bookingOptions.collaboration.groupCode, {
+            paymentIntentId: payloadPaymentIntentId,
+          })
+        : await confirmBooking({
+            experienceId:    experience._id,
+            guestCount:      Number(guests),
+            slot:            { date: selectedSlot.date, startTime: selectedSlot.startTime },
+            splitPayment:    bookingOptions.splitPayment,
+            costShare:       bookingOptions.collaboration.joinMode === 'create' && Number(guests) > 1,
+            collaboration:   bookingOptions.collaboration,
+            splitPayments:   buildSplitPayments(),
+            contact:         { ...contact, phone: `${contact.phoneCountry} ${contact.phoneNumber}`.trim() },
+            paymentIntentId: payloadPaymentIntentId,
+          })
+
+      const { data } = response
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['myBookings'] }),
         queryClient.invalidateQueries({ queryKey: ['pickedForYou'] }),
+        queryClient.invalidateQueries({ queryKey: ['groupBooking'] }),
       ])
-      toast.success('Booking confirmed!')
+      toast.success(groupShareMode ? 'Your share is paid!' : 'Booking confirmed!')
       onSuccess(data.data._id)
     } catch (err) {
       toast.error(getErrorMessage(err))
@@ -545,8 +623,8 @@ const PaymentPanel = ({
           <p className="mb-2 text-xs font-medium text-slate-500">How much would you like to pay now?</p>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { k: 'full',    label: 'Pay in full', amt: total,   sub: null },
-              { k: 'partial', label: 'Pay deposit', amt: deposit, sub: remaining > 0 ? `+${formatPrice(remaining)} due later` : null },
+              { k: 'full',    label: 'Pay in full', amt: shareTotal,   sub: null },
+              { k: 'partial', label: 'Pay deposit', amt: shareDeposit, sub: shareRemaining > 0 ? `+${formatPrice(shareRemaining)} due later` : null },
             ].map(({ k, label, amt, sub }) => (
               <button
                 key={k}
@@ -628,6 +706,22 @@ const DonePanel = ({ contact, bookingOptions, pricing, experience, guests, booki
 
 	const userEmail = contact.email.trim().toLowerCase()
 	const isCollab = bookingOptions.collaboration.joinMode !== 'solo'
+  const checkoutInvites = parseEmails(bookingOptions?.collaboration?.invitedEmails, contact.email)
+  const fallbackMembers = (() => {
+    const bookingInvites = Array.isArray(booking?.collaboration?.invitedEmails)
+      ? booking.collaboration.invitedEmails
+      : []
+    const merged = [booking?.contact?.email || contact.email, ...bookingInvites, ...checkoutInvites].filter(Boolean)
+    return Array.from(new Set(merged.map((email) => String(email).toLowerCase()))).map((email, index) => ({
+      email,
+      amount: booking?.splitPayments?.[index]?.amount || null,
+      status: index === 0 ? 'paid' : 'pending',
+      isLeader: index === 0,
+    }))
+  })()
+  const members = booking && Array.isArray(booking.splitPayments) && booking.splitPayments.length > 0
+    ? booking.splitPayments
+    : fallbackMembers
 
   return (
     <div className="text-center">
@@ -645,8 +739,8 @@ const DonePanel = ({ contact, bookingOptions, pricing, experience, guests, booki
           <div className="space-y-2">
             {bookingLoading ? (
               <div className="text-center text-xs text-slate-400 py-2">Fetching latest status…</div>
-            ) : booking && Array.isArray(booking.splitPayments) && booking.splitPayments.length > 0 ? (
-              booking.splitPayments.map((share) => {
+            ) : members.length > 0 ? (
+              members.map((share) => {
                 const isYou = share.email && userEmail && share.email.toLowerCase() === userEmail;
                 const amount = typeof share.amount === 'number' ? formatPrice(share.amount / 100) : '';
                 return (
@@ -659,7 +753,7 @@ const DonePanel = ({ contact, bookingOptions, pricing, experience, guests, booki
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-xs text-slate-500">{amount}</span>
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${share.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {share.status === 'paid' ? 'Paid' : 'Pending'}
+                        {share.status === 'paid' ? 'Paid' : share.status === 'pending' ? 'Pending' : 'Invited'}
                       </span>
                     </div>
                   </div>
@@ -696,23 +790,96 @@ const DonePanel = ({ contact, bookingOptions, pricing, experience, guests, booki
 /* ═══════════════════════════════════════════════════════════
    RIGHT COLUMN — Static Summary + Live Group Progress
 ══════════════════════════════════════════════════════════════ */
-const SummaryPanel = ({ experience, selectedSlot, guests, pricing, bookingOptions, contact, confirmed }) => {
+const SummaryPanel = ({ experience, selectedSlot, guests, pricing, bookingOptions, contact, confirmed, confirmedBookingId = null, groupShareMode = false }) => {
   const photo        = experience.photos?.[0]
-  // Convert cents to dollars if pricing fields are present
-  const total        = pricing?.totalAfterDiscount != null
-    ? pricing.totalAfterDiscount / 100
-    : experience.price * guests
   const discount     = pricing?.discountAmount != null
     ? pricing.discountAmount / 100
     : 0
   const formattedDate = selectedSlot ? formatSlotDate(selectedSlot.date) : ''
-  const isCollab     = bookingOptions.collaboration.joinMode !== 'solo'
-  const friendEmails = parseEmails(bookingOptions?.collaboration?.invitedEmails, contact.email)
-  const allEmails    = [contact.email.trim().toLowerCase(), ...friendEmails].filter(Boolean)
-  const perShare     = isCollab && allEmails.length > 1
-    ? Math.round((total / allEmails.length) * 100) / 100
-    : total
-  const paidCount    = confirmed ? allEmails.length : (isCollab && allEmails.length > 1 ? 1 : 0)
+  const {
+    allEmails,
+    isCollab,
+    bookingTotal,
+    shareTotal,
+  } = getCheckoutAmounts({
+    experience,
+    guests,
+    pricing,
+    bookingOptions,
+    contact,
+    groupShareMode,
+  })
+  const userEmail = contact.email.trim().toLowerCase()
+  const { data: summaryBooking } = useQuery({
+    queryKey: ['booking-summary', confirmedBookingId],
+    queryFn: () => confirmedBookingId ? getBookingById(confirmedBookingId).then((r) => r.data.data) : Promise.resolve(null),
+    enabled: Boolean(confirmedBookingId && isCollab),
+  })
+  const memberStatuses = Array.isArray(summaryBooking?.splitPayments) && summaryBooking.splitPayments.length > 0
+    ? summaryBooking.splitPayments.map((share) => ({
+        email: String(share.email || '').toLowerCase(),
+        status: share.status || 'pending',
+      }))
+    : allEmails.map((email) => ({
+        email,
+        status: confirmed && email === userEmail ? 'paid' : 'pending',
+      }))
+  const paidCount = memberStatuses.filter((member) => member.status === 'paid').length
+  const totalMembers = memberStatuses.length || allEmails.length
+
+  if (groupShareMode) {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+          <div className="h-44 w-full bg-emerald-100 overflow-hidden">
+            {photo
+              ? <img src={photo} alt={experience.title} className="h-full w-full object-cover" />
+              : <div className="flex h-full w-full items-center justify-center text-5xl">ðŸ•</div>
+            }
+          </div>
+          <div className="p-4">
+            <p className="text-sm font-semibold text-slate-900 leading-snug">{experience.title}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {[formatDuration(experience.duration), experience.location?.city, formattedDate, selectedSlot?.startTime]
+                .filter(Boolean).map((tag) => (
+                  <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] text-slate-500">{tag}</span>
+                ))}
+            </div>
+            <p className="mt-1.5 text-xs text-slate-500">Invited member checkout</p>
+
+            <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-3">
+              <div className="flex justify-between text-sm text-slate-500">
+                <span>Your payment share</span>
+                <span>{formatPrice(bookingTotal)}</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-slate-100 pt-2.5">
+                <span className="text-sm font-semibold text-slate-900">Due now</span>
+                <span className="text-xl font-bold text-slate-900">{formatPrice(bookingTotal)}</span>
+              </div>
+              <p className="text-xs font-medium text-emerald-700">
+                This checkout only charges your share of the group booking.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-slate-100 bg-white px-4 py-3">
+          <div className="space-y-2">
+            {[
+              { icon: 'Secure', text: 'Secured by Stripe' },
+              { icon: 'Flex', text: 'Free cancellation within 24h' },
+              { icon: 'Email', text: 'Instant confirmation email' },
+            ].map(({ icon, text }) => (
+              <div key={text} className="flex items-center gap-2.5 text-xs text-slate-500">
+                <span className="w-10 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{icon}</span>
+                <span>{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -748,11 +915,11 @@ const SummaryPanel = ({ experience, selectedSlot, guests, pricing, bookingOption
             )}
             <div className="flex items-center justify-between border-t border-slate-100 pt-2.5">
               <span className="text-sm font-semibold text-slate-900">Total</span>
-              <span className="text-xl font-bold text-slate-900">{formatPrice(total)}</span>
+              <span className="text-xl font-bold text-slate-900">{formatPrice(bookingTotal)}</span>
             </div>
             {isCollab && allEmails.length > 1 && (
               <p className="text-xs font-medium text-emerald-700">
-                Your share: {formatPrice(perShare)} · {allEmails.length} people
+                Your share: {formatPrice(shareTotal)} · {allEmails.length} people
               </p>
             )}
           </div>
@@ -760,22 +927,22 @@ const SummaryPanel = ({ experience, selectedSlot, guests, pricing, bookingOption
       </div>
 
       {/* Live group progress widget — shows as soon as friends are added */}
-      {isCollab && allEmails.length > 1 && (
+      {isCollab && totalMembers > 1 && (
         <div className="rounded-2xl border border-violet-200 bg-white p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-500">Group progress</p>
             <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-600">
-              {paidCount}/{allEmails.length} paid
+              {paidCount}/{totalMembers} paid
             </span>
           </div>
           <div className="space-y-2 mb-3">
-            {allEmails.map((email, idx) => (
-              <div key={email} className="flex items-center gap-2 rounded-lg bg-violet-50 px-3 py-2 text-xs">
-                <div className={`h-2 w-2 shrink-0 rounded-full ${confirmed ? 'bg-emerald-500' : 'bg-amber-400'}`} />
-                <span className="flex-1 truncate text-violet-800">{email}</span>
-                {idx === 0 && <span className="text-[9px] font-semibold uppercase text-violet-400">you</span>}
-                <span className={`font-semibold ${confirmed ? 'text-emerald-600' : 'text-amber-600'}`}>
-                  {confirmed ? 'Paid' : 'Pending'}
+            {memberStatuses.map((member) => (
+              <div key={member.email} className="flex items-center gap-2 rounded-lg bg-violet-50 px-3 py-2 text-xs">
+                <div className={`h-2 w-2 shrink-0 rounded-full ${member.status === 'paid' ? 'bg-emerald-500' : 'bg-amber-400'}`} />
+                <span className="flex-1 truncate text-violet-800">{member.email}</span>
+                {member.email === userEmail && <span className="text-[9px] font-semibold uppercase text-violet-400">you</span>}
+                <span className={`font-semibold ${member.status === 'paid' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  {member.status === 'paid' ? 'Paid' : 'Pending'}
                 </span>
               </div>
             ))}
@@ -783,7 +950,7 @@ const SummaryPanel = ({ experience, selectedSlot, guests, pricing, bookingOption
           <div className="h-1.5 overflow-hidden rounded-full bg-violet-100">
             <div
               className="h-full rounded-full bg-emerald-500 transition-all duration-700"
-              style={{ width: `${Math.round((paidCount / allEmails.length) * 100)}%` }}
+              style={{ width: `${totalMembers > 0 ? Math.round((paidCount / totalMembers) * 100) : 0}%` }}
             />
           </div>
         </div>
@@ -835,7 +1002,11 @@ const CheckoutPage = () => {
   const navigate         = useNavigate()
 
   const slotId = urlParams.get('slot')
+  const slotDateParam = urlParams.get('slotDate')
+  const startTimeParam = urlParams.get('startTime')
+  const groupCodeParam = urlParams.get('groupCode')
   const guests = Number(urlParams.get('guests') || 1)
+  const isGroupJoinFlow = urlParams.get('group') === '1' && Boolean(groupCodeParam)
 
   /* ── State ── */
   const [stepIdx,            setStepIdx]            = useState(0)
@@ -865,6 +1036,17 @@ const CheckoutPage = () => {
     queryFn:  () => getExperienceById(experienceId).then((r) => r.data.data),
   })
 
+  const { data: groupBooking } = useQuery({
+    queryKey: ['groupBooking', groupCodeParam],
+    queryFn: () => getGroupBooking(groupCodeParam).then((r) => r.data.data),
+    enabled: Boolean(groupCodeParam),
+  })
+  const effectiveGroupCode = groupBooking?.collaboration?.groupCode
+    || bookingOptions.collaboration.groupCode
+    || groupCodeParam
+  const isJoinExistingFlow = bookingOptions.collaboration.joinMode === 'join' && Boolean(effectiveGroupCode)
+  const isSharePaymentFlow = isGroupJoinFlow || isJoinExistingFlow
+
   useEffect(() => {
     if (!user) return
     const parts = String(user.name || '').trim().split(/\s+/)
@@ -880,10 +1062,10 @@ const CheckoutPage = () => {
   // Auto-select join tab and pre-fill group code if present in URL
   useEffect(() => {
     const groupParam = urlParams.get('group');
-    const groupCodeParam = urlParams.get('groupCode');
     if (groupParam === '1') {
       setBookingOptions((p) => ({
         ...p,
+        splitPayment: groupCodeParam ? true : p.splitPayment,
         collaboration: {
           ...p.collaboration,
           joinMode: groupCodeParam ? 'join' : 'create',
@@ -893,18 +1075,42 @@ const CheckoutPage = () => {
     }
   }, []); // eslint-disable-line
 
-  const selectedSlot = exp?.availability?.find((s) => String(s._id) === String(slotId)) || null
+  useEffect(() => {
+    if (!groupBooking) return
+    setBookingOptions((p) => ({
+      ...p,
+      splitPayment: true,
+      collaboration: {
+        ...p.collaboration,
+        joinMode: 'join',
+        groupCode: groupBooking?.collaboration?.groupCode || p.collaboration.groupCode,
+        groupName: groupBooking?.collaboration?.groupName || p.collaboration.groupName,
+      },
+    }))
+  }, [groupBooking])
+
+  const selectedSlot = exp?.availability?.find((s) => {
+    if (slotId && String(s._id) === String(slotId)) return true
+    if (!slotDateParam || !startTimeParam) return false
+    return normalizeSlotDate(s.date) === slotDateParam && String(s.startTime) === String(startTimeParam)
+  }) || null
 
   /* ── Payment intent ── */
   const initPayment = useCallback(() => {
     if (!exp || !selectedSlot) return
+    if (isSharePaymentFlow && !effectiveGroupCode) return
     setPaymentInitError('')
-    createPaymentIntent({
-      experienceId,
-      guestCount:   guests,
-      slot:         { date: normalizeSlotDate(selectedSlot.date), startTime: selectedSlot.startTime },
-      splitPayment: bookingOptions.splitPayment,
-    })
+    const intentRequest = isSharePaymentFlow
+      ? createGroupSharePaymentIntent(effectiveGroupCode)
+      : createPaymentIntent({
+          experienceId,
+          guestCount:   guests,
+          slot:         { date: normalizeSlotDate(selectedSlot.date), startTime: selectedSlot.startTime },
+          splitPayment: bookingOptions.splitPayment,
+          costShare:    bookingOptions.collaboration.joinMode === 'create' && Number(guests) > 1,
+        })
+
+    intentRequest
       .then(({ data }) => {
         setClientSecret(data.data.clientSecret)
         setPaymentIntentId(data.data.paymentIntentId)
@@ -915,7 +1121,7 @@ const CheckoutPage = () => {
         setPaymentInitError(msg)
         toast.error(msg)
       })
-  }, [exp, selectedSlot, guests, experienceId, bookingOptions.splitPayment]) // eslint-disable-line
+  }, [exp, selectedSlot, guests, experienceId, bookingOptions.splitPayment, isSharePaymentFlow, effectiveGroupCode]) // eslint-disable-line
 
   useEffect(() => {
     if (!exp) return
@@ -942,7 +1148,11 @@ const CheckoutPage = () => {
 
   /* ── Dynamic step list — recomputed when collab toggles ── */
   const isCollabOn = bookingOptions.collaboration.joinMode !== 'solo'
-  const steps      = isCollabOn ? COLLAB_STEPS : SOLO_STEPS
+  const steps = isSharePaymentFlow
+    ? JOIN_GROUP_STEPS
+    : isCollabOn
+      ? COLLAB_STEPS
+      : SOLO_STEPS
 
   // If user toggles collab OFF while on group/invite step, snap back to options
   useEffect(() => {
@@ -1052,6 +1262,7 @@ const CheckoutPage = () => {
                   bookingOptions={bookingOptions}
                   onBack={goBack}
                   onSuccess={handleSuccess}
+                  groupShareMode={isSharePaymentFlow}
                 />
               )}
               {currentStepId === 'done' && enrichedExp && (
@@ -1077,6 +1288,8 @@ const CheckoutPage = () => {
                   bookingOptions={bookingOptions}
                   contact={contact}
                   confirmed={confirmed}
+                  confirmedBookingId={confirmedBookingId}
+                  groupShareMode={isSharePaymentFlow}
                 />
               )}
             </div>

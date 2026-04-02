@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { getAllMyBookings, cancelBooking, checkInBooking } from '../../services/bookingService.js'
+import { getUserRewards } from '../../services/rewardsService.js'
 import { getErrorMessage } from '../../utils/helpers.js'
 import { formatDate, formatPrice } from '../../utils/formatters.js'
 import Navbar from '../../components/common/Navbar.jsx'
@@ -11,22 +12,42 @@ import Spinner from '../../components/common/Spinner.jsx'
 import Modal from '../../components/common/Modal.jsx'
 import Button from '../../components/common/Button.jsx'
 import EmptyState from '../../components/common/EmptyState.jsx'
+import { useSelector } from 'react-redux'
 
 const PENDING_STATUSES = ['pending', 'pending_payment', 'partially_paid']
+const ACTIVE_BOOKING_STATUSES = ['confirmed', 'upcoming', ...PENDING_STATUSES]
 const STATUS_TABS = ['all', 'confirmed', 'pending', 'completed', 'cancelled']
 
 const BADGE = {
   confirmed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  upcoming:  'bg-emerald-50 text-emerald-700 border-emerald-200',
   pending:   'bg-amber-50 text-amber-700 border-amber-200',
+  pending_payment: 'bg-amber-50 text-amber-700 border-amber-200',
+  partially_paid: 'bg-violet-50 text-violet-700 border-violet-200',
   completed: 'bg-blue-50 text-blue-700 border-blue-200',
   cancelled: 'bg-rose-50 text-rose-700 border-rose-200',
 }
 
-const getBookingAmount = (booking) => {
-  if (typeof booking?.amount === 'number') return booking.amount / 100
+const getBookingFullTotal = (booking) => {
+  if (typeof booking?.pricing?.totalAfterDiscount === 'number') return booking.pricing.totalAfterDiscount / 100
   if (typeof booking?.totalPrice === 'number') return booking.totalPrice
   const fallback = Number(booking?.experienceId?.price || 0) * Number(booking?.guestCount || 1)
   return Number.isFinite(fallback) ? fallback : 0
+}
+
+const getBookingDisplayAmount = (booking, userEmail = '') => {
+  const normalizedUserEmail = String(userEmail || '').trim().toLowerCase()
+  const splitPayments = Array.isArray(booking?.splitPayments) ? booking.splitPayments : []
+  if (normalizedUserEmail && splitPayments.length > 0) {
+    const myShare = splitPayments.find((share) => String(share?.email || '').trim().toLowerCase() === normalizedUserEmail)
+    if (typeof myShare?.amount === 'number') return myShare.amount / 100
+  }
+  if (typeof booking?.amount === 'number') return booking.amount / 100
+  return getBookingFullTotal(booking)
+}
+
+const getBookingAmount = (booking) => {
+  return getBookingFullTotal(booking)
 }
 
 const getSlotLabel = (booking) => {
@@ -36,13 +57,19 @@ const getSlotLabel = (booking) => {
 }
 
 const isHistory = (status) => ['completed', 'cancelled'].includes(status)
-const isActive  = (status) => ['confirmed', ...PENDING_STATUSES].includes(status)
+const isActive  = (status) => ACTIVE_BOOKING_STATUSES.includes(status)
 
 // ── Booking Card ──────────────────────────────────────────────────────────────
 const BookingCard = ({ booking, onCancel, onCheckIn }) => {
-  const amount    = getBookingAmount(booking)
+  const amount    = getBookingDisplayAmount(booking, booking?.contact?.email)
   const active    = isActive(booking.status)
   const checkedIn = booking.checkIn?.status === 'checked_in'
+  const hasShareAmount = Array.isArray(booking?.splitPayments) && booking.splitPayments.length > 0
+  const amountLabel = hasShareAmount
+    ? 'Your share'
+    : booking?.pricing?.splitPayment
+      ? 'Deposit paid'
+      : 'Full booking total'
 
   return (
     <article className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 transition-colors">
@@ -65,7 +92,7 @@ const BookingCard = ({ booking, onCancel, onCheckIn }) => {
               {booking.experienceId?.title || 'Experience'}
             </h2>
             <span className={`shrink-0 inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize ${BADGE[booking.status] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-              {booking.status}
+              {String(booking.status).replace(/_/g, ' ')}
             </span>
           </div>
 
@@ -82,7 +109,7 @@ const BookingCard = ({ booking, onCancel, onCheckIn }) => {
             )}
             {checkedIn && (
               <span className="text-emerald-600 font-medium">
-                Checked in{booking.checkIn?.rewardPointsEarned ? ` · +${booking.checkIn.rewardPointsEarned} pts` : ''}
+                Checked in{booking.checkIn?.rewardPointsGranted ? ` · +${booking.checkIn.rewardPointsGranted} pts` : ''}
               </span>
             )}
             {booking.pricing?.splitPayment && (
@@ -96,7 +123,10 @@ const BookingCard = ({ booking, onCancel, onCheckIn }) => {
 
       {/* Footer: price + actions — always full-width row on mobile */}
       <div className="flex items-center justify-between gap-2 px-3 pb-3 sm:px-4 sm:pb-4">
-        <p className="text-[15px] font-semibold text-slate-900">{formatPrice(amount)}</p>
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">{amountLabel}</p>
+          <p className="text-[15px] font-semibold text-slate-900">{formatPrice(amount)}</p>
+        </div>
 
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
           {booking._id && (
@@ -131,6 +161,7 @@ const BookingCard = ({ booking, onCancel, onCheckIn }) => {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 const MyBookingsPage = () => {
+  const { user } = useSelector((s) => s.auth)
   const queryClient = useQueryClient()
   const [cancelId,       setCancelId]       = useState(null)
   const [cancelling,     setCancelling]     = useState(false)
@@ -142,12 +173,18 @@ const MyBookingsPage = () => {
     queryFn:  getAllMyBookings,
   })
 
+  const { data: rewards } = useQuery({
+    queryKey: ['userRewards', user?._id],
+    queryFn: () => getUserRewards(user._id).then((r) => r.data.data),
+    enabled: Boolean(user?._id),
+  })
+
   const activeBookings  = useMemo(() => bookings.filter(b => isActive(b.status)),  [bookings])
   const historyBookings = useMemo(() => bookings.filter(b => isHistory(b.status)), [bookings])
 
   const counts = useMemo(() => ({
     all:       bookings.length,
-    confirmed: bookings.filter(b => b.status === 'confirmed').length,
+    confirmed: bookings.filter(b => ['confirmed', 'upcoming'].includes(b.status)).length,
     pending:   bookings.filter(b => PENDING_STATUSES.includes(b.status)).length,
     completed: bookings.filter(b => b.status === 'completed').length,
     cancelled: bookings.filter(b => b.status === 'cancelled').length,
@@ -156,14 +193,11 @@ const MyBookingsPage = () => {
   const upcomingCount  = counts.confirmed + counts.pending
   const totalSpent     = useMemo(() =>
     bookings
-      .filter(b => ['confirmed', 'completed'].includes(b.status))
+      .filter(b => ['confirmed', 'upcoming', 'completed'].includes(b.status))
       .reduce((sum, b) => sum + getBookingAmount(b), 0),
     [bookings]
   )
-  const totalRewardPts = useMemo(() =>
-    bookings.reduce((sum, b) => sum + Number(b?.checkIn?.rewardPointsEarned || 0), 0),
-    [bookings]
-  )
+  const totalRewardPts = Number(rewards?.points ?? bookings.reduce((sum, b) => sum + Number(b?.checkIn?.rewardPointsGranted || 0), 0))
 
   const filteredActive = useMemo(() => {
     if (tab === 'all') return activeBookings
@@ -240,7 +274,7 @@ const MyBookingsPage = () => {
             <h2 className="text-[13px] font-semibold text-violet-900 mb-3">Group bookings</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {groupBookings.map(b => {
-                const userEmail    = b.contactEmail || b.user?.email || ''
+                const userEmail    = String(user?.email || b.contact?.email || '').trim().toLowerCase()
                 const invitedEmails = Array.isArray(b.collaboration?.invitedEmails)
                   ? b.collaboration.invitedEmails
                   : String(b.collaboration?.invitedEmails || '').split(/[,\n]+/).map(e => e.trim()).filter(Boolean)
@@ -250,6 +284,8 @@ const MyBookingsPage = () => {
                       { email: userEmail, amount: b.amount, status: b.status, isLeader: true },
                       ...invitedEmails.filter(e => e && e !== userEmail).map(e => ({ email: e, amount: b.amount, status: 'pending', isLeader: false })),
                     ]
+                const otherMembers = members.filter((member) => String(member?.email || '').trim().toLowerCase() !== userEmail)
+                const visibleMembers = otherMembers.length > 0 ? otherMembers : members
                 return (
                   <div key={b._id} className="rounded-lg border border-violet-200 bg-white p-3">
                     <div className="flex items-center gap-1.5 mb-1 flex-wrap">
@@ -264,7 +300,7 @@ const MyBookingsPage = () => {
                     <p className="text-[11px] text-slate-500 mb-2">Code: {b.collaboration.groupCode}</p>
 
                     <div className="space-y-1 mb-2">
-                      {members.map(m => {
+                      {visibleMembers.map(m => {
                         const isYou = m.email && userEmail && m.email.toLowerCase() === userEmail.toLowerCase()
                         const amt   = typeof m.amount === 'number'
                           ? formatPrice(m.amount / 100)
@@ -285,7 +321,9 @@ const MyBookingsPage = () => {
                       })}
                     </div>
 
-                    <p className="text-[10px] text-slate-400 mb-2">Friends have 48 hours to pay.</p>
+                    <p className="text-[10px] text-slate-400 mb-2">
+                      {otherMembers.length > 0 ? 'Friends have 48 hours to pay.' : 'Your group is set up.'}
+                    </p>
                     <div className="flex gap-1.5 flex-wrap">
                       <Link
                         to={`/experiences/${b.experienceId?._id}`}
@@ -293,12 +331,14 @@ const MyBookingsPage = () => {
                       >
                         View trip
                       </Link>
-                      <Link
-                        to={`/group/invite/${b.collaboration.groupCode}`}
-                        className="text-[11px] font-medium text-emerald-700 border border-emerald-200 rounded-md px-2.5 py-1 hover:bg-emerald-50 transition-colors"
-                      >
-                        Group details
-                      </Link>
+                      {b.collaboration?.groupCode && (
+                        <Link
+                          to={`/group/invite/${b.collaboration.groupCode}`}
+                          className="text-[11px] font-medium text-emerald-700 border border-emerald-200 rounded-md px-2.5 py-1 hover:bg-emerald-50 transition-colors"
+                        >
+                          Group details
+                        </Link>
+                      )}
                     </div>
                   </div>
                 )

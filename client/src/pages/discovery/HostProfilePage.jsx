@@ -46,27 +46,27 @@ export default function HostProfilePage() {
                 <img src={experiences[0].photos[0]} alt={host.name} className="h-full w-full object-cover" />
               ) : null}
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f2d1a]/75 via-[#0f2d1a]/35 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 px-6 py-6 sm:px-8">
+              <div className="absolute inset-x-0 bottom-0 px-4 py-5 sm:px-8 sm:py-6">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7ef0c3]">
                   {hostLocation || "Local host"}{hostCraft ? ` • ${hostCraft}` : ""}
                 </p>
-                <h1 className="mt-2 text-3xl font-bold text-white sm:text-4xl">{host.name}</h1>
+                <h1 className="mt-2 text-2xl font-bold text-white sm:text-4xl">{host.name}</h1>
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-white/85">
                   {host?.hostStoryProfile?.headline || host?.bio || "Explore this host's local experiences, stories, pathways, and guest feedback."}
                 </p>
               </div>
             </div>
 
-            <div className="px-6 py-8 sm:px-8">
+            <div className="px-4 py-6 sm:px-8 sm:py-8">
               <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <section className="space-y-6">
                   <div className="flex flex-wrap items-start gap-4">
                     <Avatar name={host.name} src={host.profilePic} size="xl" />
-                    <div className="min-w-[220px] flex-1">
+                    <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
                         {hostLocation ? <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" />{hostLocation}</span> : null}
                         {joinedLabel ? <span>Joined {joinedLabel}</span> : null}
-                        {spokenLanguages.length ? <span>Speaks {spokenLanguages.join(", ")}</span> : null}
+                        {spokenLanguages.length ? <span className="break-words">Speaks {spokenLanguages.join(", ")}</span> : null}
                       </div>
                       <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
                         {host.bio || "This host has not added a bio yet."}

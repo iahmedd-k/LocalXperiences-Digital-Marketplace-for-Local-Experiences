@@ -1,25 +1,3 @@
-// ─── Group Booking Invite Email ─────────────────────────────────────────────
-const sendGroupInviteEmail = async ({ email, inviterName, experience, booking, groupCode, inviteNote }) => {
-  const joinUrl = `${CLIENT_URL}/checkout/${experience._id}?slot=${booking.slot?.slotId || booking.slot?._id || ''}&group=1&groupCode=${groupCode}`;
-  const msg = {
-    to:      email,
-    from:    FROM_EMAIL,
-    subject: `${inviterName} invited you to join a group booking for ${experience.title}!` ,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #f97316;">You're invited to join a group booking!</h2>
-        <p><strong>${inviterName}</strong> invited you to join a group for <strong>${experience.title}</strong>.</p>
-        <p><strong>Group name:</strong> ${booking.collaboration?.groupName || ''}</p>
-        <p><strong>Group code:</strong> <span style="font-family:monospace;">${groupCode}</span></p>
-        ${inviteNote ? `<blockquote style='background:#f9f9f9; padding:10px; border-left:4px solid #f97316; margin:16px 0;'>${inviteNote}</blockquote>` : ''}
-        <a href="${joinUrl}" style="background:#f97316; color:white; padding:12px 24px; text-decoration:none; border-radius:5px; display:inline-block; margin:16px 0;">Join this group booking</a>
-        <p style="color:#666; font-size:12px;">If you don't want to join, you can ignore this email.</p>
-      </div>
-    `,
-  };
-  await sgMail.send(msg);
-};
-
 const { sendMail, FROM_EMAIL, APP_NAME, CLIENT_URL } = require('../config/nodemailer');
 
 const formatBookingSlot = (booking) => {
@@ -28,6 +6,63 @@ const formatBookingSlot = (booking) => {
   const dateLabel = date && Number.isFinite(date.getTime()) ? date.toDateString() : 'Date to be confirmed';
   const timeLabel = booking?.slot?.startTime ? ` at ${booking.slot.startTime}` : '';
   return `${dateLabel}${timeLabel}`;
+};
+
+const formatCurrency = (amountInCents = 0) => `$${(Number(amountInCents || 0) / 100).toFixed(2)}`;
+
+// ─── Group Booking Invite Email ─────────────────────────────────────────────
+const sendGroupInviteEmail = async ({ email, inviterName, experience, booking, groupCode, inviteNote }) => {
+  const slotDate = booking?.slot?.date ? encodeURIComponent(new Date(booking.slot.date).toISOString()) : '';
+  const startTime = booking?.slot?.startTime ? encodeURIComponent(booking.slot.startTime) : '';
+  const slotId = booking?.slot?.slotId || booking?.slot?._id || '';
+  const joinUrl = `${CLIENT_URL}/checkout/${experience._id}?slot=${slotId}&slotDate=${slotDate}&startTime=${startTime}&group=1&groupCode=${groupCode}`;
+  const share = Array.isArray(booking?.splitPayments)
+    ? booking.splitPayments.find((entry) => String(entry?.email || '').trim().toLowerCase() === String(email || '').trim().toLowerCase())
+    : null;
+  const amountLabel = formatCurrency(share?.amount || 0);
+  const deadlineLabel = booking?.paymentDeadlineAt
+    ? new Date(booking.paymentDeadlineAt).toLocaleString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+    : null;
+  const msg = {
+    to:      email,
+    from:    FROM_EMAIL,
+    subject: `${inviterName} invited you to join a group booking for ${experience.title}!`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; background: #f8fffb; border: 1px solid #d1fae5; border-radius: 20px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #166534, #16a34a); padding: 28px 32px; color: white;">
+          <p style="margin: 0 0 8px; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85;">Group Invite</p>
+          <h2 style="margin: 0; font-size: 28px; line-height: 1.2;">You're invited to join this booking</h2>
+          <p style="margin: 12px 0 0; font-size: 15px; line-height: 1.6; color: #dcfce7;">
+            <strong>${inviterName}</strong> invited you to join <strong>${experience.title}</strong> with the group <strong>${booking.collaboration?.groupName || 'Your group'}</strong>.
+          </p>
+        </div>
+        <div style="padding: 28px 32px;">
+          <div style="background: white; border: 1px solid #dcfce7; border-radius: 16px; padding: 18px 20px; margin-bottom: 18px;">
+            <p style="margin: 0 0 12px; font-size: 13px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.08em;">Booking details</p>
+            <p style="margin: 0 0 10px; color: #14532d;"><strong>Experience:</strong> ${experience.title}</p>
+            <p style="margin: 0 0 10px; color: #14532d;"><strong>Date:</strong> ${formatBookingSlot(booking)}</p>
+            <p style="margin: 0 0 10px; color: #14532d;"><strong>Group code:</strong> <span style="font-family: Consolas, monospace; background: #ecfdf5; border: 1px solid #bbf7d0; border-radius: 8px; padding: 3px 8px;">${groupCode}</span></p>
+            <p style="margin: 0 0 10px; color: #14532d;"><strong>Your share:</strong> ${amountLabel}</p>
+            ${deadlineLabel ? `<p style="margin: 0; color: #14532d;"><strong>Payment deadline:</strong> ${deadlineLabel}</p>` : ''}
+          </div>
+          ${inviteNote ? `<blockquote style="margin: 0 0 18px; background: #ecfdf5; color: #166534; padding: 14px 16px; border-left: 4px solid #22c55e; border-radius: 12px;">${inviteNote}</blockquote>` : ''}
+          <p style="margin: 0 0 16px; color: #365314; line-height: 1.7;">
+            Open the checkout link below to review the booking and pay only your assigned share. Once your payment is complete, your spot in the group will be confirmed.
+          </p>
+          <a href="${joinUrl}" style="background:#16a34a; color:white; padding:14px 24px; text-decoration:none; border-radius:999px; display:inline-block; font-weight:700;">Review booking and pay your share</a>
+          <p style="margin: 18px 0 0; color:#4b5563; font-size:12px; line-height:1.6;">If you do not want to join this booking, you can safely ignore this email.</p>
+          <p style="margin: 8px 0 0; color:#4b5563; font-size:12px; line-height:1.6;">Need the code later? Use <strong>${groupCode}</strong> on the checkout page.</p>
+        </div>
+      </div>
+    `,
+  };
+  await sendMail(msg);
 };
 
 // ─── Welcome Email ─────────────────────────────────────────────────────────

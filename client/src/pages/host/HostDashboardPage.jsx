@@ -205,8 +205,9 @@ const HostDashboardPage = () => {
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const getBookingTotal = (b) =>
-    typeof b.amount === 'number' ? b.amount / 100
-      : typeof b.totalPrice === 'number' ? b.totalPrice : 0
+    typeof b?.pricing?.totalAfterDiscount === 'number' ? b.pricing.totalAfterDiscount / 100
+      : typeof b?.totalPrice === 'number' ? b.totalPrice
+      : Number(b?.experienceId?.price || 0) * Number(b?.guestCount || 1)
 
   const now = new Date()
   const thirtyDaysAgo = new Date(now - 30 * 86400000)
@@ -348,9 +349,9 @@ const HostDashboardPage = () => {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
             <StatCard
               iconBg="#ecfdf5" icon={Icon.Dollar}
-              label="Total revenue" value={formatPrice(totalRevenue)}
+              label="Full booking revenue" value={formatPrice(totalRevenue)}
               trendUp={revenueTrend}
-              sub={potentialRevenue > 0 ? `+${formatPrice(potentialRevenue)} potential` : 'Confirmed earnings'}
+              sub={potentialRevenue > 0 ? `+${formatPrice(potentialRevenue)} potential from unpaid or pending bookings` : 'Confirmed earnings from full booking totals'}
             />
             <StatCard
               iconBg="#eff6ff" icon={Icon.Experience}

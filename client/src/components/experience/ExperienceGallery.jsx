@@ -9,7 +9,17 @@ const FALLBACK_PHOTOS = [
 
 export default function ExperienceGallery({ photos = [], title = 'Experience' }) {
   const galleryPhotos = useMemo(() => (photos.length > 0 ? photos : FALLBACK_PHOTOS), [photos])
-  const previewPhotos = galleryPhotos.slice(0, 3)
+  const previewTiles = useMemo(() => {
+    const first = galleryPhotos[0]
+    const second = galleryPhotos[1] || first
+    const third = galleryPhotos[2] || galleryPhotos[1] || first
+
+    return [
+      { src: first, index: 0 },
+      { src: second, index: galleryPhotos[1] ? 1 : 0 },
+      { src: third, index: galleryPhotos[2] ? 2 : (galleryPhotos[1] ? 1 : 0) },
+    ]
+  }, [galleryPhotos])
   const [isViewerOpen, setIsViewerOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
 
@@ -44,35 +54,35 @@ export default function ExperienceGallery({ photos = [], title = 'Experience' })
 
   return (
     <>
-      <div className="overflow-hidden rounded-[28px] bg-white shadow-[0_28px_80px_rgba(15,23,42,0.08)]">
-        <div className="grid gap-1.5 lg:grid-cols-[minmax(0,2.15fr)_minmax(300px,1fr)]">
+      <div className="overflow-hidden rounded-[18px] bg-white">
+        <div className="grid gap-[3px] lg:grid-cols-[minmax(0,1.72fr)_minmax(250px,0.92fr)] lg:h-[338px] xl:h-[352px]">
           <button
             type="button"
-            onClick={() => openViewer(0)}
-            className="group relative min-h-[320px] overflow-hidden bg-slate-900 text-left sm:min-h-[420px] lg:min-h-[510px]"
+            onClick={() => openViewer(previewTiles[0].index)}
+            className="group relative aspect-[4/3] overflow-hidden bg-slate-900 text-left sm:aspect-[16/10] lg:h-full lg:aspect-auto"
           >
             <img
-              src={previewPhotos[0]}
+              src={previewTiles[0].src}
               alt={title}
               className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-transparent" />
-            <div className="absolute bottom-5 right-5 inline-flex items-center gap-2 rounded-full bg-[#0d3b1f] px-4 py-2 text-sm font-semibold text-white shadow-lg">
+            <div className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full bg-[#0d3b1f] px-3 py-1.5 text-sm font-semibold text-white shadow-lg">
               <Images className="h-4 w-4" />
               {galleryPhotos.length.toLocaleString()}
             </div>
           </button>
 
-          <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-1">
-            {previewPhotos.slice(1, 3).map((photo, index) => (
+          <div className="hidden gap-[3px] sm:grid-cols-2 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
+            {previewTiles.slice(1, 3).map((tile, index) => (
               <button
-                key={`${photo}-${index}`}
+                key={`${tile.src}-${index}`}
                 type="button"
-                onClick={() => openViewer(index + 1)}
-                className="group relative min-h-[180px] overflow-hidden bg-slate-900 text-left sm:min-h-[205px] lg:min-h-[254px]"
+                onClick={() => openViewer(tile.index)}
+                className="group relative aspect-[4/3] overflow-hidden bg-slate-900 text-left sm:aspect-[16/10] lg:min-h-0 lg:flex-1 lg:aspect-auto"
               >
                 <img
-                  src={photo}
+                  src={tile.src}
                   alt={`${title} ${index + 2}`}
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
                 />
@@ -80,6 +90,24 @@ export default function ExperienceGallery({ photos = [], title = 'Experience' })
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-[3px] border-t border-slate-100 p-[3px] lg:hidden">
+          {previewTiles.slice(1, 3).map((tile, index) => (
+            <button
+              key={`mobile-${tile.src}-${index}`}
+              type="button"
+              onClick={() => openViewer(tile.index)}
+              className="group relative aspect-[16/10] overflow-hidden rounded-[14px] bg-slate-900 text-left"
+            >
+              <img
+                src={tile.src}
+                alt={`${title} ${index + 2}`}
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/20 via-transparent to-transparent" />
+            </button>
+          ))}
         </div>
       </div>
 

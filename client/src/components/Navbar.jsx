@@ -11,7 +11,6 @@ const NAV_ITEMS = [
   { key: "Pathways", labelKey: "nav_pathways", to: "/pathways" },
   { key: "Stories", labelKey: "nav_stories", to: "/stories" },
   { key: "About", labelKey: "nav_about", to: "/about" },
-  { key: "Contact", labelKey: "nav_contact", to: "/contact" },
   { key: "Host", labelKey: "nav_become_host", to: "/become-host" },
 ];
 
@@ -79,6 +78,11 @@ export default function Navbar({ activeNav, setActiveNav, onMenuToggle, isDashbo
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    setMenuOpen(false);
+    setMobileNavOpen(false);
+  }, [location.pathname, location.hash]);
+
   const isMobile = windowWidth <= 1024;
   const sidebarWidth = 250;
 
@@ -107,12 +111,16 @@ export default function Navbar({ activeNav, setActiveNav, onMenuToggle, isDashbo
                   ? (isScrolled ? "rgba(7,15,11,.76)" : "rgba(0,0,0,.28)")
                   : (isScrolled ? "rgba(255,255,255,.96)" : "rgba(255,255,255,.92)")),
             backdropFilter: isDashboard ? "none" : "blur(20px)",
-            border: isDashboard 
-              ? "none" 
+            borderStyle: "solid",
+            borderTopWidth: isDashboard ? 0 : 1,
+            borderRightWidth: isDashboard ? 0 : 1,
+            borderLeftWidth: isDashboard ? 0 : 1,
+            borderBottomWidth: 1,
+            borderColor: isDashboard
+              ? "#E5E7EB"
               : (isHome
-                  ? (isScrolled ? "1px solid rgba(255,255,255,.2)" : "1px solid rgba(255,255,255,.12)")
-                  : "1px solid #E5E7EB"),
-            borderBottom: isDashboard ? "1px solid #E5E7EB" : undefined,
+                  ? (isScrolled ? "rgba(255,255,255,.2)" : "rgba(255,255,255,.12)")
+                  : "#E5E7EB"),
             borderRadius: isDashboard ? 0 : 20,
             padding: isDashboard 
               ? (isMobile ? "12px 16px" : "14px 40px") 

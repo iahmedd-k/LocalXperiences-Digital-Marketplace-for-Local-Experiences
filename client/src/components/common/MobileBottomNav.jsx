@@ -1,20 +1,20 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Compass, Heart, CalendarDays, User, Trophy } from 'lucide-react';
+import { Compass, Search, CalendarDays, User } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
 export default function MobileBottomNav() {
   const location = useLocation();
   const { isAuthenticated } = useSelector((state) => state.auth);
   const isDashboard = location.pathname.startsWith('/host');
+  const allowedPaths = ['/', '/search', '/my-bookings', '/profile'];
+  const shouldShow = allowedPaths.includes(location.pathname);
 
-  // Do not show on dashboard or desktop
-  if (isDashboard) return null;
+  if (isDashboard || !shouldShow) return null;
 
   const NAV_ITEMS = [
-    { label: 'Explore', to: '/', icon: Compass },
-    { label: 'Wishlist', to: '/wishlist', icon: Heart },
+    { label: 'Home', to: '/', icon: Compass },
+    { label: 'Search', to: '/search', icon: Search },
     { label: 'Bookings', to: '/my-bookings', icon: CalendarDays },
-    { label: 'Rewards', to: '/rewards', icon: Trophy },
     { label: 'Profile', to: isAuthenticated ? '/profile' : '/login', icon: User },
   ];
 

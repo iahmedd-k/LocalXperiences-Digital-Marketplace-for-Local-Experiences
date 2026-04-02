@@ -68,10 +68,29 @@ export default function TrendingSection() {
   const { data: experiences = [] } = useQuery({
     queryKey: ["homeTrending"],
     queryFn: async () => {
+      const mergeUnique = (primary = [], secondary = [], target = 8) => {
+        const seen = new Set()
+        const merged = []
+
+        for (const item of [...primary, ...secondary]) {
+          const id = String(item?._id || '')
+          if (!id || seen.has(id)) continue
+          seen.add(id)
+          merged.push(item)
+          if (merged.length >= target) break
+        }
+
+        return merged
+      }
+
       try {
         const featured = await getFeatured();
         const featuredData = featured.data.data || [];
-        if (featuredData.length > 0) return featuredData;
+        if (featuredData.length >= 4) return featuredData;
+
+        const all = await getExperiences({ limit: 12, sort: "rating" });
+        const allData = all.data.data || [];
+        return mergeUnique(featuredData, allData, 8);
       } catch {
         // Fallback to general experiences below
       }

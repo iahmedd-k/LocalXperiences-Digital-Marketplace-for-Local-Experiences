@@ -18,6 +18,7 @@ const bookingSchema = new mongoose.Schema(
       required: true,
     },
     slot: {
+      slotId:     { type: mongoose.Schema.Types.ObjectId, default: null },
       date:      { type: Date,   required: true },
       startTime: { type: String, required: true },
     },

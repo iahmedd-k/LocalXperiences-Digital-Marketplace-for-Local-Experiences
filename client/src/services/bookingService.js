@@ -11,6 +11,10 @@ export const completeHostBooking = (id)   => api.put(`/bookings/${id}/complete`)
 export const cancelHostBooking   = (id)   => api.put(`/bookings/${id}/cancel`)
 export const checkInBooking      = (id, data = {})   => api.put(`/bookings/${id}/check-in`, data)
 export const overrideBookingStatus = (id, status) => api.put(`/bookings/${id}/status`, { status })
+export const getGroupBooking = (groupCode) => api.get(`/bookings/group/${groupCode}`)
+export const joinGroupBooking = (groupCode, data = {}) => api.post(`/bookings/group/${groupCode}/join`, data)
+export const createGroupSharePaymentIntent = (groupCode) => api.post(`/bookings/group/${groupCode}/create-payment-intent`)
+export const confirmGroupSharePayment = (groupCode, data) => api.post(`/bookings/group/${groupCode}/confirm-share-payment`, data)
 
 const collectAllPages = async (fetchPage) => {
 	let page = 1

@@ -86,12 +86,83 @@ const normalizeCollaboration = (rawValue = {}) => ({
   groupCode: String(rawValue?.groupCode || '').trim().toUpperCase(),
   groupName: String(rawValue?.groupName || '').trim(),
   inviteNote: String(rawValue?.inviteNote || '').trim(),
+  invitedEmails: Array.from(new Set(
+    String(rawValue?.invitedEmails || '')
+      .split(/[\n,]+/)
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean)
+  )),
   joinMode: ['solo', 'create', 'join'].includes(rawValue?.joinMode) ? rawValue.joinMode : 'solo',
 });
 
 const buildGroupCode = () => crypto.randomBytes(3).toString('hex').toUpperCase();
 const buildInviteToken = () => crypto.randomBytes(12).toString('hex');
 const buildCheckInCode = () => String(Math.floor(100000 + Math.random() * 900000));
+const splitAmountEvenly = (totalAmount, memberCount) => {
+  const safeMembers = Math.max(1, Number(memberCount || 1));
+  const total = Math.max(0, Math.round(Number(totalAmount || 0)));
+  const base = Math.floor(total / safeMembers);
+  return Array.from({ length: safeMembers }, (_, index) =>
+    index === safeMembers - 1 ? total - (base * (safeMembers - 1)) : base
+  );
+};
+
+const ACTIVE_GROUP_STATUSES = ['pending', 'pending_payment', 'partially_paid', 'confirmed', 'upcoming'];
+
+const syncSplitBookingStatus = (booking) => {
+  const shares = Array.isArray(booking?.splitPayments) ? booking.splitPayments : [];
+  const allPaid = shares.length > 0 && shares.every((share) => share.status === 'paid');
+
+  booking.payment = booking.payment || {};
+  booking.payment.status = allPaid ? 'succeeded' : 'partially_paid';
+  booking.status = allPaid ? 'upcoming' : 'pending_payment';
+
+  return booking;
+};
+
+const ensureCollaborativeShares = (booking) => {
+  const guestCount = Math.max(1, Number(booking?.guestCount || 1));
+  if (guestCount <= 1 || !booking?.collaboration?.groupCode) return false;
+
+  const leaderEmail = String(booking?.contact?.email || booking?.userId?.email || '').trim().toLowerCase();
+  const invitedEmails = Array.isArray(booking?.collaboration?.invitedEmails)
+    ? booking.collaboration.invitedEmails
+    : String(booking?.collaboration?.invitedEmails || '').split(/[\n,]+/);
+  const expectedEmails = Array.from(new Set([leaderEmail, ...invitedEmails.map((email) => String(email || '').trim().toLowerCase())].filter(Boolean)));
+  if (expectedEmails.length !== guestCount) return false;
+
+  const existingShares = Array.isArray(booking?.splitPayments) ? booking.splitPayments : [];
+  const totalAmount = Math.max(0, Number(booking?.pricing?.totalAfterDiscount || 0));
+  const existingTotal = existingShares.reduce((sum, share) => sum + Math.max(0, Number(share?.amount || 0)), 0);
+  const existingEmails = existingShares.map((share) => String(share?.email || '').trim().toLowerCase()).filter(Boolean);
+  const missingMembers = expectedEmails.some((email) => !existingEmails.includes(email));
+  const mismatchedCount = existingShares.length !== expectedEmails.length;
+  const mismatchedTotal = existingTotal !== totalAmount;
+  const singleFullShare = existingShares.length === 1 && Number(existingShares[0]?.amount || 0) === totalAmount && guestCount > 1;
+  const shouldRepair = missingMembers || mismatchedCount || mismatchedTotal || singleFullShare;
+
+  if (!shouldRepair) return false;
+
+  const splitAmounts = splitAmountEvenly(totalAmount, expectedEmails.length);
+  booking.splitPayments = expectedEmails.map((email, index) => {
+    const existingShare = existingShares.find((share) => String(share?.email || '').trim().toLowerCase() === email);
+    const isLeader = email === leaderEmail;
+    return {
+      email,
+      amount: splitAmounts[index],
+      isLeader,
+      inviteToken: existingShare?.inviteToken || buildInviteToken(),
+      paymentIntentId: existingShare?.paymentIntentId || (isLeader ? booking?.payment?.paymentIntentId || null : null),
+      status: existingShare?.status || (isLeader ? 'paid' : 'pending'),
+      paidAt: existingShare?.paidAt || (isLeader && booking?.payment?.paymentIntentId ? new Date() : null),
+    };
+  });
+  booking.collaboration.invitedEmails = expectedEmails.filter((email) => email !== leaderEmail);
+  booking.paymentDeadlineAt = booking.paymentDeadlineAt || new Date(Date.now() + 24 * 60 * 60 * 1000);
+  booking.pricing.splitPayment = true;
+  syncSplitBookingStatus(booking);
+  return true;
+};
 
 const toRadians = (value) => (Number(value) * Math.PI) / 180;
 const distanceMeters = (fromLat, fromLng, toLat, toLng) => {
@@ -108,7 +179,7 @@ const distanceMeters = (fromLat, fromLng, toLat, toLng) => {
 // Step 1 — Create Stripe payment intent, return clientSecret to frontend
 const createBookingPaymentIntent = async (req, res, next) => {
   try {
-    const { experienceId, guestCount, slot, splitPayment = false } = req.body;
+    const { experienceId, guestCount, slot, splitPayment = false, costShare = false } = req.body;
 
     const experience = await Experience.findById(experienceId);
     if (!experience || !experience.isActive) {
@@ -168,7 +239,9 @@ const createBookingPaymentIntent = async (req, res, next) => {
 
     // Calculate amount in cents
     const pricing = resolveBookingPricing(experience, Number(guestCount), splitPayment);
-    const amount = pricing.amountDueNow;
+    const amount = costShare
+      ? splitAmountEvenly(pricing.amountDueNow, Number(guestCount))[0]
+      : pricing.amountDueNow;
 
     if (!Number.isInteger(amount) || amount <= 0) {
       return errorResponse(res, 400, 'Unable to calculate a valid payment amount');
@@ -183,6 +256,7 @@ const createBookingPaymentIntent = async (req, res, next) => {
         slotDate:     requestedDate,
         startTime:    slot.startTime,
         splitPayment: String(Boolean(pricing.splitPayment)),
+        costShare: String(Boolean(costShare)),
         remainingAmount: String(pricing.remainingAmount),
       },
     });
@@ -202,7 +276,7 @@ const createBookingPaymentIntent = async (req, res, next) => {
 // Step 2 — Confirm booking after successful payment
 const confirmBooking = async (req, res, next) => {
   try {
-    const { experienceId, guestCount, slot, paymentIntentId, splitPayment = false, splitPayments = [], collaboration, contact } = req.body;
+    const { experienceId, guestCount, slot, paymentIntentId, splitPayment = false, costShare = false, splitPayments = [], collaboration, contact } = req.body;
     const isProd = process.env.NODE_ENV === 'production';
 
     // Verify payment was successful with Stripe.
@@ -246,10 +320,14 @@ const confirmBooking = async (req, res, next) => {
     }
 
     const pricing = resolveBookingPricing(experience, requestedGuestCount, splitPayment);
+    const collaborationInput = normalizeCollaboration(collaboration);
+    const usesCollaborativeCostShare = Boolean(costShare && collaborationInput.joinMode === 'create' && requestedGuestCount > 1);
+    const expectedAmount = usesCollaborativeCostShare
+      ? splitAmountEvenly(pricing.amountDueNow, requestedGuestCount)[0]
+      : pricing.amountDueNow;
 
     if (paymentIntent) {
       const metadata = paymentIntent.metadata || {};
-      const expectedAmount = pricing.amountDueNow;
 
       if (
         String(metadata.experienceId || '') !== String(experienceId) ||
@@ -294,17 +372,10 @@ const confirmBooking = async (req, res, next) => {
       return errorResponse(res, 400, 'Not enough slots available');
     }
 
-    // Increment booked count
-    experience.availability[slotIndex].booked += requestedGuestCount;
-    await experience.save();
-    await deleteCacheByPattern(`experience:${experienceId}`);
-    await deleteCacheByPattern('experiences:*');
-
-    const amountCents = paymentIntent?.amount ?? pricing.amountDueNow;
-    const collaborationInput = normalizeCollaboration(collaboration);
+    const amountCents = paymentIntent?.amount ?? expectedAmount;
     let finalGroupCode = null;
 
-    if (collaborationInput.joinMode === 'create' && experience?.bookingSettings?.allowCollaborativeBookings) {
+    if (collaborationInput.joinMode === 'create') {
       finalGroupCode = collaborationInput.groupCode || buildGroupCode();
     }
 
@@ -324,6 +395,7 @@ const confirmBooking = async (req, res, next) => {
       finalGroupCode = collaborationInput.groupCode;
     }
 
+    const requesterEmail = String(req.user?.email || contact?.email || '').trim().toLowerCase();
     const requestedShares = Array.isArray(splitPayments) ? splitPayments : [];
     const normalizedShares = requestedShares
       .map((share) => ({
@@ -332,12 +404,52 @@ const confirmBooking = async (req, res, next) => {
         isLeader: Boolean(share?.isLeader),
       }))
       .filter((share) => share.email);
+    const dedupedShares = Array.from(
+      normalizedShares.reduce((map, share) => {
+        if (!map.has(share.email)) map.set(share.email, share);
+        return map;
+      }, new Map()).values()
+    );
+    const leaderSeed = dedupedShares.find((share) => share.isLeader)
+      || dedupedShares.find((share) => share.email === requesterEmail)
+      || null;
+    const normalizedCollaborativeShares = dedupedShares.length > 0
+      ? [
+          {
+            email: requesterEmail,
+            amount: leaderSeed?.amount || Math.round(pricing.totalAfterDiscount / Math.max(1, requestedGuestCount)),
+            isLeader: true,
+          },
+          ...dedupedShares
+            .filter((share) => share.email && share.email !== requesterEmail)
+            .map((share) => ({
+              ...share,
+              isLeader: false,
+            })),
+        ]
+      : [];
 
-    const finalSplitPayments = pricing.splitPayment
-      ? (normalizedShares.length
-          ? normalizedShares
+    if (collaborationInput.joinMode === 'create' && requestedGuestCount > 1) {
+      const expectedMemberCount = requestedGuestCount;
+      const providedMemberCount = (pricing.splitPayment || usesCollaborativeCostShare)
+        ? normalizedCollaborativeShares.length
+        : 1 + collaborationInput.invitedEmails.filter((email) => email !== requesterEmail).length;
+
+      if (providedMemberCount !== expectedMemberCount) {
+        return errorResponse(
+          res,
+          400,
+          `This booking is for ${requestedGuestCount} guests. Please add details for all ${requestedGuestCount} group members before continuing.`
+        );
+      }
+    }
+
+    const usesSharedPayments = pricing.splitPayment || usesCollaborativeCostShare;
+    const finalSplitPayments = usesSharedPayments
+      ? (normalizedCollaborativeShares.length
+          ? normalizedCollaborativeShares
           : [{
-              email: String(contact?.email || req.user.email || '').trim().toLowerCase(),
+              email: requesterEmail,
               amount: Math.round(pricing.totalAfterDiscount / Math.max(1, requestedGuestCount)),
               isLeader: true,
             }])
@@ -353,9 +465,15 @@ const confirmBooking = async (req, res, next) => {
           }))
       : [];
 
-    const paymentDeadlineAt = pricing.splitPayment
+    const paymentDeadlineAt = usesSharedPayments
       ? new Date(Date.now() + 24 * 60 * 60 * 1000)
       : null;
+
+    // Reserve the slot only after all validation passes.
+    experience.availability[slotIndex].booked += requestedGuestCount;
+    await experience.save();
+    await deleteCacheByPattern(`experience:${experienceId}`);
+    await deleteCacheByPattern('experiences:*');
 
     // Create booking record
     const booking = await Booking.create({
@@ -363,6 +481,7 @@ const confirmBooking = async (req, res, next) => {
       userId:     req.user._id,
       hostId:     experience.hostId,
       slot: {
+        slotId: slotEntry?._id || null,
         date: new Date(slot.date),
         startTime: slot.startTime,
       },
@@ -375,7 +494,7 @@ const confirmBooking = async (req, res, next) => {
         discountAmount: pricing.discountAmount,
         amountDueNow: pricing.amountDueNow,
         remainingAmount: pricing.remainingAmount,
-        splitPayment: pricing.splitPayment,
+        splitPayment: usesSharedPayments,
         depositPercent: pricing.depositPercent,
         pricingLabel: pricing.pricingLabel,
       },
@@ -384,7 +503,9 @@ const confirmBooking = async (req, res, next) => {
         groupName: collaborationInput.groupName,
         inviteNote: collaborationInput.inviteNote,
         leaderId: collaborationInput.joinMode === 'create' ? req.user._id : null,
-        invitedEmails: finalSplitPayments.filter((share) => !share.isLeader).map((share) => share.email),
+        invitedEmails: usesSharedPayments
+          ? finalSplitPayments.filter((share) => !share.isLeader).map((share) => share.email)
+          : collaborationInput.invitedEmails.filter((email) => email !== requesterEmail),
         joinMode: collaborationInput.joinMode,
       },
       splitPayments: finalSplitPayments,
@@ -396,10 +517,10 @@ const confirmBooking = async (req, res, next) => {
         phone: String(contact?.phone || '').trim(),
         smsOptIn: Boolean(contact?.smsOptIn),
       },
-      status:     pricing.splitPayment ? 'pending_payment' : 'upcoming',
+      status:     usesSharedPayments ? 'pending_payment' : 'upcoming',
       payment: {
         paymentIntentId,
-        status: pricing.splitPayment ? 'partially_paid' : 'succeeded',
+        status: usesSharedPayments ? 'partially_paid' : 'succeeded',
       },
       checkIn: {
         status: 'not_checked_in',
@@ -456,7 +577,12 @@ const getMyBookings = async (req, res, next) => {
   try {
     const { status, page = 1, limit = 10 } = req.query;
 
-    const filter = { userId: req.user._id };
+    const filter = {
+      $or: [
+        { userId: req.user._id },
+        { 'splitPayments.email': String(req.user?.email || '').trim().toLowerCase() },
+      ],
+    };
     if (status) filter.status = status;
 
     const skip  = (Number(page) - 1) * Number(limit);
@@ -527,8 +653,10 @@ const getBookingById = async (req, res, next) => {
     // Only the traveler or host can view
     const isOwner = booking.userId._id.toString() === req.user._id.toString();
     const isHost  = booking.hostId._id.toString() === req.user._id.toString();
+    const isGroupMember = Array.isArray(booking.splitPayments) &&
+      booking.splitPayments.some((share) => share.email === String(req.user?.email || '').trim().toLowerCase());
 
-    if (!isOwner && !isHost) {
+    if (!isOwner && !isHost && !isGroupMember) {
       return errorResponse(res, 403, 'Not authorized');
     }
 
@@ -589,10 +717,20 @@ const cancelBooking = async (req, res, next) => {
       }
     }
 
-    // Process refund if payment was made
+    // Process refund only when the latest Stripe state is actually refundable.
     if (booking.payment?.paymentIntentId && booking.payment?.status === 'succeeded') {
-      refundPayment(booking.payment.paymentIntentId)
-        .catch((e) => console.error('Refund failed:', e.message));
+      try {
+        const paymentIntent = await retrievePaymentIntent(booking.payment.paymentIntentId);
+        const hasSuccessfulCharge = paymentIntent?.status === 'succeeded';
+        if (hasSuccessfulCharge) {
+          refundPayment(booking.payment.paymentIntentId)
+            .catch((e) => console.error('Refund failed:', e.message));
+        } else {
+          console.warn(`Skipping refund for booking ${booking._id}: payment intent is not refundable (${paymentIntent?.status || 'unknown'}).`);
+        }
+      } catch (e) {
+        console.warn(`Skipping refund lookup for booking ${booking._id}: ${e.message}`);
+      }
     }
 
     // Send cancellation emails — non-blocking
@@ -769,13 +907,31 @@ module.exports = {
       const { groupCode } = req.params;
       const booking = await Booking.findOne({
         'collaboration.groupCode': groupCode.toUpperCase(),
-        status: { $in: ['pending', 'pending_payment', 'partially_paid', 'confirmed'] },
+        status: { $in: ACTIVE_GROUP_STATUSES },
       })
         .populate('experienceId', 'title photos location price duration category availability groupSize bookingSettings')
         .populate('hostId', 'name profilePic')
         .populate('splitPayments');
       if (!booking) return errorResponse(res, 404, 'Group booking not found');
-      return successResponse(res, 200, 'Group booking details', booking);
+      if (ensureCollaborativeShares(booking)) {
+        await booking.save();
+      }
+
+      const availabilityEntry = booking.experienceId?.availability?.find((slot) =>
+        toDateOnlyString(slot.date) === toDateOnlyString(booking.slot?.date) &&
+        String(slot.startTime) === String(booking.slot?.startTime)
+      );
+      const remaining = availabilityEntry
+        ? Math.max(0, Number(availabilityEntry.slots || 0) - Number(availabilityEntry.booked || 0))
+        : null;
+
+      const payload = booking.toObject();
+      payload.slot = {
+        ...payload.slot,
+        slotId: availabilityEntry?._id || null,
+        remaining,
+      };
+      return successResponse(res, 200, 'Group booking details', payload);
     } catch (error) {
       next(error);
     }
@@ -784,15 +940,16 @@ module.exports = {
   joinGroupBooking: async (req, res, next) => {
     try {
       const { groupCode } = req.params;
-      const { email } = req.body;
+      const email = String(req.body?.email || req.user?.email || '').trim().toLowerCase();
+      if (!email) return errorResponse(res, 400, 'A valid email is required');
       const booking = await Booking.findOne({
         'collaboration.groupCode': groupCode.toUpperCase(),
-        status: { $in: ['pending', 'pending_payment', 'partially_paid', 'confirmed'] },
+        status: { $in: ACTIVE_GROUP_STATUSES },
       });
       if (!booking) return errorResponse(res, 404, 'Group booking not found');
       // Check if already joined
       const already = booking.splitPayments.find((s) => s.email === email);
-      if (already) return errorResponse(res, 400, 'You have already joined this group');
+      if (already) return successResponse(res, 200, 'Already joined group booking', booking);
       // Add to splitPayments
       booking.splitPayments.push({
         email,
@@ -813,7 +970,7 @@ module.exports = {
       const { groupCode } = req.params;
       const booking = await Booking.findOne({
         'collaboration.groupCode': groupCode.toUpperCase(),
-        status: { $in: ['pending', 'pending_payment', 'partially_paid', 'confirmed'] },
+        status: { $in: ACTIVE_GROUP_STATUSES },
       });
       if (!booking) return errorResponse(res, 404, 'Group booking not found');
       // Progress: how many paid, total, amounts
@@ -828,6 +985,143 @@ module.exports = {
         remainingAmount: booking.splitPayments.filter((s) => s.status !== 'paid').reduce((sum, s) => sum + s.amount, 0),
       };
       return successResponse(res, 200, 'Group booking progress', progress);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  createGroupSharePaymentIntent: async (req, res, next) => {
+    try {
+      const { groupCode } = req.params;
+      const booking = await Booking.findOne({
+        'collaboration.groupCode': groupCode.toUpperCase(),
+        status: { $in: ACTIVE_GROUP_STATUSES },
+      }).populate('experienceId', 'isActive');
+
+      if (!booking || !booking.experienceId?.isActive) {
+        return errorResponse(res, 404, 'Group booking not found');
+      }
+      if (ensureCollaborativeShares(booking)) {
+        await booking.save();
+      }
+
+      const userEmail = String(req.user?.email || '').trim().toLowerCase();
+      if (!userEmail) return errorResponse(res, 400, 'A valid account email is required');
+
+      let share = booking.splitPayments.find((entry) => entry.email === userEmail);
+      if (!share) {
+        booking.splitPayments.push({
+          email: userEmail,
+          amount: Math.round(booking.pricing.totalAfterDiscount / Math.max(1, booking.splitPayments.length + 1)),
+          isLeader: false,
+          status: 'pending',
+          inviteToken: buildInviteToken(),
+        });
+        await booking.save();
+        share = booking.splitPayments.find((entry) => entry.email === userEmail);
+      }
+
+      if (!share) return errorResponse(res, 400, 'Unable to prepare your payment share');
+      if (share.status === 'paid') {
+        return successResponse(res, 200, 'Your share is already paid', {
+          alreadyPaid: true,
+          amount: share.amount,
+          pricing: {
+            splitPayment: true,
+            totalAfterDiscount: share.amount,
+            amountDueNow: share.amount,
+            remainingAmount: 0,
+          },
+        });
+      }
+
+      const amount = Math.max(1, Math.round(Number(share.amount || 0)));
+      const paymentIntent = await createPaymentIntent({
+        amount,
+        metadata: {
+          bookingId: booking._id.toString(),
+          groupCode: groupCode.toUpperCase(),
+          shareEmail: userEmail,
+        },
+      });
+
+      return successResponse(res, 200, 'Share payment intent created', {
+        clientSecret: paymentIntent.client_secret,
+        amount,
+        paymentIntentId: paymentIntent.id,
+        bookingId: booking._id,
+        pricing: {
+          splitPayment: true,
+          totalAfterDiscount: amount,
+          amountDueNow: amount,
+          remainingAmount: 0,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  confirmGroupSharePayment: async (req, res, next) => {
+    try {
+      const { groupCode } = req.params;
+      const { paymentIntentId } = req.body || {};
+      if (!paymentIntentId) return errorResponse(res, 400, 'Payment intent is required');
+
+      const isProd = process.env.NODE_ENV === 'production';
+      let paymentIntent = null;
+      try {
+        paymentIntent = await retrievePaymentIntent(paymentIntentId);
+      } catch (err) {
+        if (isProd) return errorResponse(res, 400, 'Payment not completed');
+        console.warn('Stripe share payment lookup failed in non-production, continuing anyway:', err.message);
+      }
+
+      if (isProd && paymentIntent && paymentIntent.status !== 'succeeded') {
+        return errorResponse(res, 400, 'Payment not completed');
+      }
+
+      const booking = await Booking.findOne({
+        'collaboration.groupCode': groupCode.toUpperCase(),
+        status: { $in: ACTIVE_GROUP_STATUSES },
+      })
+        .populate('experienceId', 'title photos location price duration')
+        .populate('hostId', 'name email profilePic')
+        .populate('userId', 'name email profilePic');
+
+      if (!booking) return errorResponse(res, 404, 'Group booking not found');
+
+      const userEmail = String(req.user?.email || '').trim().toLowerCase();
+      const share = booking.splitPayments.find((entry) => entry.email === userEmail);
+      if (!share) return errorResponse(res, 404, 'No payment share found for this user');
+      if (share.status === 'paid') {
+        syncSplitBookingStatus(booking);
+        await booking.save();
+        return successResponse(res, 200, 'Your share is already paid', booking);
+      }
+
+      if (paymentIntent) {
+        const metadata = paymentIntent.metadata || {};
+        if (
+          String(metadata.bookingId || '') !== String(booking._id) ||
+          String(metadata.groupCode || '') !== String(groupCode).toUpperCase() ||
+          String(metadata.shareEmail || '').toLowerCase() !== userEmail
+        ) {
+          return errorResponse(res, 400, 'Payment details do not match this share');
+        }
+
+        if (Number(paymentIntent.amount) !== Number(share.amount)) {
+          return errorResponse(res, 400, 'Payment amount does not match this share');
+        }
+      }
+
+      share.status = 'paid';
+      share.paymentIntentId = paymentIntentId;
+      share.paidAt = new Date();
+      syncSplitBookingStatus(booking);
+      await booking.save();
+
+      return successResponse(res, 200, 'Share payment completed', booking);
     } catch (error) {
       next(error);
     }

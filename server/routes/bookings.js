@@ -14,6 +14,8 @@ const {
   getGroupBookingDetails,
   joinGroupBooking,
   getGroupBookingProgress,
+  createGroupSharePaymentIntent,
+  confirmGroupSharePayment,
   overrideBookingStatus,
 } = require('../controllers/bookingController');
 
@@ -46,6 +48,8 @@ router.get('/host', protect, hostOnly, getHostBookings);
 router.get('/group/:groupCode', protect, getGroupBookingDetails);
 router.post('/group/:groupCode/join', protect, joinGroupBooking);
 router.get('/group/:groupCode/progress', protect, getGroupBookingProgress);
+router.post('/group/:groupCode/create-payment-intent', protect, createGroupSharePaymentIntent);
+router.post('/group/:groupCode/confirm-share-payment', protect, confirmGroupSharePayment);
 
 // Single booking detail
 router.get('/:id', protect, getBookingById);

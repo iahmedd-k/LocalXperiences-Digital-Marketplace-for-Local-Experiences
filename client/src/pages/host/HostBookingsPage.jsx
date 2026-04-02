@@ -19,13 +19,15 @@ import { formatDate, formatPrice } from '../../utils/formatters.js'
 
 const statusVariant = {
   pending: 'yellow',
+  pending_payment: 'yellow',
+  partially_paid: 'yellow',
   confirmed: 'green',
   upcoming: 'green',
   cancelled: 'red',
   completed: 'blue'
 }
 
-const STATUS_TABS = ['all', 'upcoming', 'confirmed', 'pending', 'completed', 'cancelled']
+const STATUS_TABS = ['all', 'upcoming', 'confirmed', 'pending_payment', 'partially_paid', 'completed', 'cancelled']
 
 const HostBookingsPage = () => {
   const queryClient = useQueryClient()
@@ -40,9 +42,9 @@ const HostBookingsPage = () => {
   })
 
   const getBookingTotal = (b) => {
-    if (typeof b?.amount === 'number') return b.amount / 100
+    if (typeof b?.pricing?.totalAfterDiscount === 'number') return b.pricing.totalAfterDiscount / 100
     if (typeof b?.totalPrice === 'number') return b.totalPrice
-    return 0
+    return Number(b?.experienceId?.price || 0) * Number(b?.guestCount || 1)
   }
 
   const normalizedSearch = search.trim().toLowerCase()
@@ -51,7 +53,8 @@ const HostBookingsPage = () => {
     all: bookings.length,
     upcoming: bookings.filter(b => b.status === 'upcoming').length,
     confirmed: bookings.filter(b => b.status === 'confirmed').length,
-    pending: bookings.filter(b => b.status === 'pending').length,
+    pending_payment: bookings.filter(b => b.status === 'pending_payment').length,
+    partially_paid: bookings.filter(b => b.status === 'partially_paid').length,
     completed: bookings.filter(b => b.status === 'completed').length,
     cancelled: bookings.filter(b => b.status === 'cancelled').length,
   }), [bookings])
@@ -122,9 +125,9 @@ const HostBookingsPage = () => {
             </h1>
           </div>
 
-          {counts.pending > 0 && (
+          {(counts.pending_payment > 0 || counts.partially_paid > 0) && (
             <div className="text-xs sm:text-sm bg-amber-50 px-3 py-1.5 rounded-full text-amber-700 font-semibold">
-              {counts.pending} pending
+              {counts.pending_payment + counts.partially_paid} waiting for payment
             </div>
           )}
         </div>
@@ -165,6 +168,14 @@ const HostBookingsPage = () => {
             {filtered.map(b => {
               const isBusy = actionState.id === b._id
               const guests = b.guestCount ?? b.guests ?? 0
+              const groupMembers = Array.isArray(b.splitPayments) ? b.splitPayments : []
+              const allPaid = groupMembers.length > 0 && groupMembers.every(member => member.status === 'paid')
+              const canComplete = ['confirmed', 'upcoming'].includes(b.status) || (groupMembers.length > 0 && allPaid)
+              const amountLabel = b.pricing?.splitPayment
+                ? 'Full booking total'
+                : groupMembers.length > 0
+                  ? 'Full booking total'
+                  : 'Booking total'
 
               return (
                 <div key={b._id} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
@@ -178,7 +189,7 @@ const HostBookingsPage = () => {
                           {b.userId?.name || 'Guest'}
                         </p>
                         <Badge variant={statusVariant[b.status]}>
-                          {b.status}
+                          {String(b.status).replace(/_/g, ' ')}
                         </Badge>
                       </div>
 
@@ -189,16 +200,34 @@ const HostBookingsPage = () => {
                       <div className="text-xs text-slate-500 mt-2 space-y-1">
                         <p>Date: {b.slot?.date ? formatDate(b.slot.date) : '—'}</p>
                         <p>Guests: {guests}</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{amountLabel}</p>
                         <p className="text-emerald-600 font-semibold">
                           {formatPrice(getBookingTotal(b))}
                         </p>
+                        {b.collaboration?.groupCode && (
+                          <p className="text-violet-600 font-semibold">Group: {b.collaboration.groupCode}</p>
+                        )}
+                        {groupMembers.length > 0 && (
+                          <div className="pt-1 space-y-1">
+                            <p className="text-[11px] font-semibold text-slate-600">
+                              {groupMembers.filter(member => member.status === 'paid').length}/{groupMembers.length} paid
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {groupMembers.map(member => (
+                                <span key={member.email} className={`rounded-full px-2 py-1 text-[10px] font-medium ${member.status === 'paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                                  {member.email} · {member.status === 'paid' ? 'Paid' : 'Pending'}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Actions */}
                       <div className="flex flex-wrap gap-2 mt-3">
                         <Button
                           size="sm"
-                          disabled={isBusy}
+                          disabled={isBusy || !canComplete}
                           onClick={() =>
                             handleAction(b._id, 'complete', () =>
                               completeMutation.mutate(b._id)
@@ -207,6 +236,11 @@ const HostBookingsPage = () => {
                         >
                           Done
                         </Button>
+                        {groupMembers.length > 0 && !allPaid && (
+                          <span className="self-center text-[11px] text-amber-600">
+                            Wait until all group members have paid
+                          </span>
+                        )}
 
                         <Button
                           size="sm"

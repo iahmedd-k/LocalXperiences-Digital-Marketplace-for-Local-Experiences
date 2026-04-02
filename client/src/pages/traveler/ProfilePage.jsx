@@ -91,6 +91,18 @@ const StatusBadge = ({ status }) => (
   </span>
 )
 
+const getBookingDisplayAmount = (booking, userEmail = '') => {
+  const normalizedUserEmail = String(userEmail || '').trim().toLowerCase()
+  const splitPayments = Array.isArray(booking?.splitPayments) ? booking.splitPayments : []
+  if (normalizedUserEmail && splitPayments.length > 0) {
+    const myShare = splitPayments.find((share) => String(share?.email || '').trim().toLowerCase() === normalizedUserEmail)
+    if (typeof myShare?.amount === 'number') return myShare.amount / 100
+  }
+  if (typeof booking?.pricing?.totalAfterDiscount === 'number') return booking.pricing.totalAfterDiscount / 100
+  if (typeof booking?.amount === 'number') return booking.amount / 100
+  return booking?.totalPrice || 0
+}
+
 // ─── Submit button ────────────────────────────────────────────────────────────
 const SubmitBtn = ({ loading, children }) => (
   <button
@@ -110,7 +122,7 @@ const SectionHead = ({ children }) => (
 
 // ─── Booking row ──────────────────────────────────────────────────────────────
 const BookingRow = ({ booking }) => {
-  const amount = typeof booking.amount === 'number' ? booking.amount / 100 : (booking.totalPrice || 0)
+  const amount = getBookingDisplayAmount(booking, booking?.contact?.email)
   return (
     <div style={{ padding: '12px 0', borderBottom: '0.5px solid #f3f4f6', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -343,7 +355,7 @@ const ProfilePage = ({ hideLayout = false }) => {
         </div>
 
         {/* ── Content panel ──────────────────────────────────────────────── */}
-        <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '20px 24px' }}>
+        <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 12, padding: '20px 24px', overflow: 'hidden' }}>
 
           {isTabLoading && (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
@@ -463,12 +475,12 @@ const ProfilePage = ({ hideLayout = false }) => {
             <>
               <SectionHead>Rewards & milestones</SectionHead>
               {rewards && (
-                <>
+                <div style={{ minWidth: 0 }}>
                   <RewardsSummaryCard checkInCount={rewards.checkInCount} badges={rewards.earnedBadges} />
                   <div style={{ marginTop: 16 }}>
                     <MilestoneList />
                   </div>
-                </>
+                </div>
               )}
             </>
           )}

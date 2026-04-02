@@ -1,26 +1,37 @@
-import React from 'react';
+import React from 'react'
 
 export default function MilestoneList({ milestones = [], unlockedMilestones = [] }) {
+  if (!milestones.length) return null
+
   return (
-    <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm mb-6">
-      <div className="mb-2 text-base font-bold text-emerald-700 flex items-center gap-2">
-        🎯 Milestones
+    <div className="mb-6 rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm sm:p-5">
+      <div className="mb-3 flex items-center gap-2 text-base font-bold text-emerald-700">
+        Milestones
       </div>
+
       <div className="space-y-2">
-        {milestones.map((m) => {
-          const unlocked = unlockedMilestones.some((um) => um.milestoneId === m.milestoneId);
+        {milestones.map((milestone) => {
+          const unlocked = unlockedMilestones.some((item) => item.milestoneId === milestone.milestoneId)
+
           return (
-            <div key={m.milestoneId} className={`flex items-center gap-2 text-sm ${unlocked ? 'text-emerald-700' : 'text-slate-400'}`}>
-              <span>{unlocked ? '✅' : '🔒'}</span>
-              <span className="font-semibold">{m.title}</span>
-              <span className="ml-2 text-xs">{m.description}</span>
-              {!unlocked && m.progress !== undefined && (
-                <span className="ml-2 text-xs">{m.progress} / {m.targetCount}</span>
-              )}
+            <div
+              key={milestone.milestoneId}
+              className={`flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 text-sm ${
+                unlocked
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : 'border-slate-200 bg-slate-50 text-slate-500'
+              }`}
+            >
+              <span className="shrink-0 text-xs font-semibold">{unlocked ? 'Done' : 'Locked'}</span>
+              <span className="font-semibold">{milestone.title}</span>
+              <span className="min-w-0 break-words text-xs">{milestone.description}</span>
+              {!unlocked && milestone.progress !== undefined ? (
+                <span className="text-xs">{milestone.progress} / {milestone.targetCount}</span>
+              ) : null}
             </div>
-          );
+          )
         })}
       </div>
     </div>
-  );
+  )
 }

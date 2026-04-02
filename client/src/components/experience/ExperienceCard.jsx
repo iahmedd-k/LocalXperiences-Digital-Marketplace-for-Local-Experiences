@@ -43,7 +43,7 @@ export default function ExperienceCard({
         ) : null}
       </div>
       <div className="flex flex-col p-4">
-        <p className="mb-2 min-h-11 text-[1rem] font-bold text-[#0f2d1a] leading-6 line-clamp-2">{experience?.title || "Untitled Experience"}</p>
+        <p className="mb-2 min-h-[2.75rem] text-[1rem] font-bold text-[#0f2d1a] leading-6 line-clamp-2">{experience?.title || "Untitled Experience"}</p>
         <div className="mb-2 flex items-center gap-1.5">
           <span className="text-sm text-slate-700">{rating.toFixed(1)}</span>
           <div className="flex gap-0.5">
