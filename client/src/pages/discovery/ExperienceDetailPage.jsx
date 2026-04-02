@@ -237,7 +237,7 @@ const ReserveCard = ({
   selectedSlot, maxSelectableGuests, hasBooking, isAuthenticated, location,
   averageBookAheadDays, requireAuth,
   setShowCancellationModal, setShowReserveLaterModal,
-  refreshAvailability, isRefreshingAvailability,
+  refreshAvailability, isRefreshingAvailability, openAvailabilitySignal,
 }) => {
   const { currency } = useCurrency()
   const navigate = useNavigate()
@@ -338,6 +338,12 @@ const ReserveCard = ({
     if (!dateOptions.length) { setFlowState('unavailable'); return }
     setPickerOpen(true)
   }
+
+  useEffect(() => {
+    if (!openAvailabilitySignal) return
+    handleOpenAvailability()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openAvailabilitySignal])
 
   const handleProceedToCheckout = () => {
     if (!activeSlot?._id) { toast.error('Select an available date and time first'); return }
@@ -744,6 +750,7 @@ const ExperienceDetailPage = () => {
 
   /* ── UI state ── */
   const [activeSection,            setActiveSection]            = useState('overview')
+  const [mobileAvailabilityRequest, setMobileAvailabilityRequest] = useState(0)
   const [reviewText,               setReviewText]               = useState('')
   const [reviewSearch,             setReviewSearch]             = useState('')
   const [reviewSort,               setReviewSort]               = useState('insightful')
@@ -904,6 +911,17 @@ const ExperienceDetailPage = () => {
     if (!section) return
     window.scrollTo({ top: section.getBoundingClientRect().top + window.scrollY - 96, behavior: 'smooth' })
     setActiveSection(sectionId)
+  }
+
+  const scrollToReserveCard = () => {
+    const reserveCard = document.getElementById('reserve-card')
+    if (!reserveCard) return
+    window.scrollTo({ top: reserveCard.getBoundingClientRect().top + window.scrollY - 96, behavior: 'smooth' })
+  }
+
+  const handleMobileAvailabilityOpen = () => {
+    scrollToReserveCard()
+    setMobileAvailabilityRequest((value) => value + 1)
   }
 
   const sendToLogin = (sectionId) =>
@@ -1362,7 +1380,7 @@ const ExperienceDetailPage = () => {
         {/* Main grid */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_292px] lg:items-start xl:gap-5">
           {/* Sidebar */}
-          <aside className="order-1 lg:order-2">
+          <aside id="reserve-card" className="order-1 lg:order-2">
             <ReserveCard
               exp={exp}
               availableSlots={availableSlots}
@@ -1379,6 +1397,7 @@ const ExperienceDetailPage = () => {
               setShowReserveLaterModal={setShowReserveLaterModal}
               refreshAvailability={refetchExperience}
               isRefreshingAvailability={isFetchingExperience}
+              openAvailabilitySignal={mobileAvailabilityRequest}
             />
           </aside>
 
@@ -1680,7 +1699,7 @@ const ExperienceDetailPage = () => {
           </div>
           <button
             type="button"
-            onClick={() => scrollToSection('overview')}
+            onClick={handleMobileAvailabilityOpen}
             className="flex-1 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition active:scale-95 hover:bg-emerald-700"
           >
             Check availability
