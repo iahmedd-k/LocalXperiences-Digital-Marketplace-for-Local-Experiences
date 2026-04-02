@@ -1,0 +1,38 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">LocalXperiences Logo</title>
+  <desc id="logoDesc">A location pin with an X route and discovery spark.</desc>
+  <defs>
+    <linearGradient id="lx-bg" x1="88" y1="56" x2="424" y2="456" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E9FFF4"/>
+      <stop offset="1" stop-color="#CFF8E6"/>
+    </linearGradient>
+    <linearGradient id="lx-pin" x1="256" y1="84" x2="256" y2="404" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0FBF7E"/>
+      <stop offset="1" stop-color="#0A8B5C"/>
+    </linearGradient>
+    <filter id="lx-shadow" x="56" y="64" width="400" height="420" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="10"/>
+      <feGaussianBlur stdDeviation="12"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.03 0 0 0 0 0.23 0 0 0 0 0.15 0 0 0 0.24 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_1" result="shape"/>
+    </filter>
+  </defs>
+
+  <rect x="40" y="40" width="432" height="432" rx="112" fill="url(#lx-bg)"/>
+
+  <g filter="url(#lx-shadow)">
+    <path d="M256 84C182.6 84 124 142.6 124 216C124 308.8 227.2 397.2 246.8 413.2C252.2 417.6 259.8 417.6 265.2 413.2C284.8 397.2 388 308.8 388 216C388 142.6 329.4 84 256 84Z" fill="url(#lx-pin)"/>
+  </g>
+
+  <circle cx="256" cy="216" r="92" fill="white" fill-opacity="0.96"/>
+  <path d="M204 166L308 270" stroke="#0A8B5C" stroke-width="22" stroke-linecap="round"/>
+  <path d="M308 166L204 270" stroke="#17A974" stroke-width="22" stroke-linecap="round"/>
+
+  <circle cx="356" cy="146" r="22" fill="#0FBF7E"/>
+  <path d="M356 128V164" stroke="white" stroke-width="7" stroke-linecap="round"/>
+  <path d="M338 146H374" stroke="white" stroke-width="7" stroke-linecap="round"/>
+</svg>
