@@ -8,32 +8,32 @@ require('dotenv').config();
 
 const app = express();
 
-// ─── Security Middleware ───────────────────────────────────────────────────
+// Security Middleware
 app.use(helmet());
-
-// Allow frontend dev on common Vite ports + configured CLIENT_URL
-// Allow all origins (for development/testing only)
 app.use(cors({
   origin: '*',
-  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language'],
+  optionsSuccessStatus: 204,
 }));
+app.options('*', cors());
 
-// ─── Body Parsers ──────────────────────────────────────────────────────────
+// Body Parsers
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Passport ─────────────────────────────────────────────────────────────
+// Passport
 app.use(passport.initialize());
 
-// ─── Rate Limiting ─────────────────────────────────────────────────────────
+// Rate Limiting
 app.use('/api', globalRateLimiter);
 
-// ─── Health Check ──────────────────────────────────────────────────────────
+// Health Check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ─── API Routes ────────────────────────────────────────────────────────────
+// API Routes
 app.use('/api/auth',            require('./routes/auth'));
 app.use('/api/experiences',     require('./routes/experiences'));
 app.use('/api/bookings',        require('./routes/bookings'));
@@ -49,7 +49,7 @@ app.use('/api/hosts',           require('./routes/hosts'));
 app.use('/api/pathways',        require('./routes/pathways'));
 app.use('/api/rewards',         require('./routes/rewards'));
 
-// ─── Error Handling ────────────────────────────────────────────────────────
+// Error Handling
 app.use(notFound);
 app.use(errorHandler);
 

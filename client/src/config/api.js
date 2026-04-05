@@ -1,11 +1,29 @@
 import axios from 'axios'
 
-const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:9000'
-const sanitizedBaseUrl = rawBaseUrl.replace(/\/+$/, '')
-export const API_BASE_URL = sanitizedBaseUrl.endsWith('/api')
-  ? sanitizedBaseUrl
-  : `${sanitizedBaseUrl}/api`
-const LOCAL_API_BASE_URL = 'http://localhost:9000/api'
+const rawBaseUrl = String(import.meta.env.VITE_API_URL || '').trim()
+
+const isPlaceholderUrl = (value) =>
+  !value ||
+  value.includes('your-vercel-api-url.com') ||
+  value.includes('example.com')
+
+const buildApiBaseUrl = () => {
+  const sanitizedBaseUrl = rawBaseUrl.replace(/\/+$/, '')
+
+  if (!isPlaceholderUrl(sanitizedBaseUrl)) {
+    return sanitizedBaseUrl.endsWith('/api')
+      ? sanitizedBaseUrl
+      : `${sanitizedBaseUrl}/api`
+  }
+
+  if (import.meta.env.DEV) {
+    return 'http://localhost:9000/api'
+  }
+
+  return '/api'
+}
+
+export const API_BASE_URL = buildApiBaseUrl()
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -33,19 +51,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   async (err) => {
-    const isDnsError =
-      err?.code === 'ERR_NETWORK' &&
-      (String(err?.message || '').includes('ERR_NAME_NOT_RESOLVED') ||
-        String(err?.message || '').includes('Network Error'))
 
-    if (isDnsError && err.config && !err.config.__retriedLocal && API_BASE_URL !== LOCAL_API_BASE_URL) {
-      const retryConfig = {
-        ...err.config,
-        __retriedLocal: true,
-        baseURL: LOCAL_API_BASE_URL,
-      }
-      return api.request(retryConfig)
-    }
 
     if (err.response?.status === 401) {
       const requestUrl = String(err?.config?.url || '')

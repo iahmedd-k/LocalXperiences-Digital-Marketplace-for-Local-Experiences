@@ -1,8 +1,8 @@
-import axios from "axios";
+import api from '../config/api.js';
 
 // Fetch exchange rates from backend
 export async function fetchExchangeRates(base = "USD") {
-  const res = await axios.get(`/api/currency/${base}`);
+  const res = await api.get(`/currency/${base}`);
   return res.data.data;
 }
 
@@ -18,6 +18,6 @@ export async function fetchSupportedCurrencies(base = "USD") {
 
 // Fetch experience with translation
 export async function fetchExperienceWithLang(id, lang = "en") {
-  const res = await axios.get(`/api/experiences/${id}?lang=${lang}`);
+  const res = await api.get(`/experiences/${id}?lang=${lang}`);
   return res.data.data;
 }
