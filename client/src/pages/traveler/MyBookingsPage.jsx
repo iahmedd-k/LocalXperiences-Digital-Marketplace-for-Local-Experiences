@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -61,6 +62,8 @@ const isActive  = (status) => ACTIVE_BOOKING_STATUSES.includes(status)
 
 // ── Booking Card ──────────────────────────────────────────────────────────────
 const BookingCard = ({ booking, onCancel, onCheckIn }) => {
+  const { t } = useTranslation();
+
   const amount    = getBookingDisplayAmount(booking, booking?.contact?.email)
   const active    = isActive(booking.status)
   const checkedIn = booking.checkIn?.status === 'checked_in'
@@ -249,7 +252,7 @@ const MyBookingsPage = () => {
 
         {/* Header */}
         <div className="mb-5 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">My Bookings</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{t("footer_my_bookings")}</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">Manage all your trips in one place.</p>
         </div>
 
@@ -309,7 +312,7 @@ const MyBookingsPage = () => {
                           <div key={m.email} className="flex items-center gap-1 text-[11px] bg-violet-50 rounded px-2 py-1">
                             <span className="flex-1 min-w-0 truncate text-violet-800">
                               {m.email}
-                              {isYou  && <span className="ml-1 text-emerald-600">You</span>}
+                              {isYou  && <span className="ml-1 text-emerald-600">{t("footer_subscribed")}</span>}
                               {m.isLeader && <span className="ml-1 text-[10px] text-violet-400">(leader)</span>}
                             </span>
                             <span className="font-semibold text-slate-700 shrink-0">{amt}</span>
@@ -335,9 +338,7 @@ const MyBookingsPage = () => {
                         <Link
                           to={`/group/invite/${b.collaboration.groupCode}`}
                           className="text-[11px] font-medium text-emerald-700 border border-emerald-200 rounded-md px-2.5 py-1 hover:bg-emerald-50 transition-colors"
-                        >
-                          Group details
-                        </Link>
+                        >{t("checkout_group_details")}</Link>
                       )}
                     </div>
                   </div>

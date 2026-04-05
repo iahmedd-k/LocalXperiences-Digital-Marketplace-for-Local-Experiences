@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Clock3, MapPin, Star } from "lucide-react";
@@ -12,6 +13,8 @@ import { formatDate, formatDuration, formatPrice } from "../../utils/formatters.
 const metricCardClass = "rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm";
 
 export default function HostProfilePage() {
+  const { t } = useTranslation();
+
   const { id } = useParams();
   const { data: host, isLoading } = useQuery({
     queryKey: ["hostProfile", id],
@@ -76,7 +79,7 @@ export default function HostProfilePage() {
 
                   <div className="grid gap-4 sm:grid-cols-3">
                     <div className={metricCardClass}>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Experiences</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t("dashboard_experiences")}</p>
                       <p className="mt-3 text-3xl font-bold text-slate-900">{experiences.length}</p>
                     </div>
                     <div className={metricCardClass}>
@@ -128,7 +131,7 @@ export default function HostProfilePage() {
 
             <section>
               <div className="mb-5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">Stories</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">{t("nav_stories")}</p>
                 <h2 className="mt-1 text-2xl font-bold text-slate-900">Published host stories</h2>
               </div>
               {stories.length ? (
@@ -155,7 +158,7 @@ export default function HostProfilePage() {
 
             <section>
               <div className="mb-5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">Pathways</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">{t("nav_pathways")}</p>
                 <h2 className="mt-1 text-2xl font-bold text-slate-900">Curated local pathways</h2>
               </div>
               {pathways.length ? (
@@ -182,7 +185,7 @@ export default function HostProfilePage() {
 
             <section>
               <div className="mb-5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">Reviews</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">{t("dashboard_reviews")}</p>
                 <h2 className="mt-1 text-2xl font-bold text-slate-900">What guests say about {host.name}</h2>
               </div>
               {reviews.length ? (

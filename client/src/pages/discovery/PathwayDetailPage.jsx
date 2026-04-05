@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import useTranslation from '../../hooks/useTranslation.js';
 import Navbar from "../../components/Navbar.jsx";
 import Footer from "../../components/Footer.jsx";
 import Spinner from "../../components/common/Spinner.jsx";
@@ -9,6 +10,7 @@ import { getPathwayById, toggleSavePathway } from "../../services/pathwayService
 import { formatDuration, formatPrice } from "../../utils/formatters.js";
 
 export default function PathwayDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const queryClient = useQueryClient();
   const { user } = useSelector((state) => state.auth);
@@ -24,9 +26,9 @@ export default function PathwayDetailPage() {
     mutationFn: toggleSavePathway,
     onSuccess: (data) => {
       queryClient.invalidateQueries(["pathway", id]);
-      toast.success(data.isSaved ? "Pathway saved" : "Pathway removed from saved");
+      toast.success(data.isSaved ? t('pathway_saved_msg') : t('pathway_removed_msg'));
     },
-    onError: () => toast.error("Failed to toggle save"),
+    onError: () => toast.error(t('pathway_failed_msg')),
   });
 
   if (isLoading)
@@ -42,7 +44,7 @@ export default function PathwayDetailPage() {
       <div className="min-h-screen flex flex-col bg-[#f8faf9]">
         <Navbar />
         <div className="flex-1 flex items-center justify-center font-playfair text-xl text-slate-400">
-          Journey not found
+          {t('pathway_not_found')}
         </div>
         <Footer />
       </div>
@@ -66,9 +68,9 @@ export default function PathwayDetailPage() {
           {/* ── Breadcrumb + Save ── */}
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <nav className="flex items-center gap-1.5 text-[11px] text-slate-400 flex-wrap">
-              <Link to="/" className="hover:text-emerald-600 transition-colors">Home</Link>
+              <Link to="/" className="hover:text-emerald-600 transition-colors">{t("nav_home")}</Link>
               <span>/</span>
-              <Link to="/pathways" className="hover:text-emerald-600 transition-colors">Pathways</Link>
+              <Link to="/pathways" className="hover:text-emerald-600 transition-colors">{t("nav_pathways")}</Link>
               <span>/</span>
               <span className="max-w-[160px] sm:max-w-xs truncate text-slate-600">{pathway.title}</span>
             </nav>
@@ -83,7 +85,7 @@ export default function PathwayDetailPage() {
               }`}
             >
               <span className="text-sm leading-none">{isSaved ? "♥" : "♡"}</span>
-              {isSaved ? "Saved" : "Save Pathway"}
+              {isSaved ? t('pathway_saved') : t('pathway_save')}
             </button>
           </div>
 
@@ -99,7 +101,7 @@ export default function PathwayDetailPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 text-white">
                   <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300 mb-2">
-                    Suggested Journey
+                    {t('pathway_suggested')}
                   </p>
                   <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-playfair leading-tight">
                     {pathway.title}
@@ -115,7 +117,7 @@ export default function PathwayDetailPage() {
             ) : (
               <div className="p-5 sm:p-8">
                 <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-600 mb-2">
-                  Suggested Journey
+                  {t('pathway_suggested')}
                 </p>
                 <h1 className="text-2xl sm:text-3xl font-bold font-playfair text-slate-900 leading-tight">
                   {pathway.title}
@@ -194,9 +196,7 @@ export default function PathwayDetailPage() {
                                 <Link
                                   to={`/experiences/${experience._id}`}
                                   className="inline-flex items-center gap-1.5 rounded-full bg-emerald-900 px-4 py-1.5 text-[12px] font-semibold text-white transition hover:bg-emerald-800 active:scale-95"
-                                >
-                                  Book this step →
-                                </Link>
+                                >{t("pathway_book_step")}</Link>
                               </div>
                             </div>
                           </div>

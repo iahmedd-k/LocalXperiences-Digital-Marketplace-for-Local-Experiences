@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
 import { ANIMATION_EASE, ANIMATION_MS, ANIMATION_TIMINGS } from "../config/constants.js";
-import useTranslation from "../hooks/useTranslation.js";
+import useTranslation from '../hooks/useTranslation.js';
 import foodImg from "../assets/food.jpg";
 import hikingImg from "../assets/hiking.jpg";
 import artsImg from "../assets/arts.jpg";

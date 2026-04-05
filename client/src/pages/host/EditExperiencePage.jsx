@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useQueryClient }     from '@tanstack/react-query'
@@ -78,6 +79,8 @@ const countCommaSeparatedItems = (value = '') => value.split(',').map((item) => 
 const countLineItems = (value = '') => value.split('\n').map((item) => item.trim()).filter(Boolean).length
 
 const EditExperiencePage = () => {
+  const { t } = useTranslation();
+
   const { id }      = useParams()
   const queryClient = useQueryClient()
   const [tab,       setTab]    = useState('details')
@@ -426,7 +429,7 @@ const EditExperiencePage = () => {
         <div className="flex items-start justify-between mb-6">
           <div>
             <Link to="/host/dashboard" className="text-sm text-emerald-500 hover:underline">← Dashboard</Link>
-            <h1 className="font-clash text-2xl font-bold text-gray-900 mt-1">Edit Experience</h1>
+            <h1 className="text-xl font-semibold text-gray-900 mt-1">Edit Experience</h1>
             <p className="text-gray-500 text-sm truncate max-w-sm">{exp.title}</p>
           </div>
           <div className="flex gap-2">
@@ -453,7 +456,7 @@ const EditExperiencePage = () => {
           {tab === 'details' && (
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                <h2 className="font-clash text-lg font-bold text-gray-900">Experience Details</h2>
+                <h2 className="text-base font-semibold text-gray-900">Experience Details</h2>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <span className="text-sm text-gray-600">Active</span>
                   <div
@@ -475,7 +478,7 @@ const EditExperiencePage = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-semibold text-gray-700">Category</label>
+                  <label className="text-sm font-semibold text-gray-700">{t("search_category")}</label>
                   <select value={form.category} onChange={(e) => set('category', e.target.value)}
                     className={`border rounded-lg px-4 py-2.5 text-sm outline-none focus:border-emerald-400 ${errors.category ? 'border-rose-300 bg-rose-50/30' : 'border-gray-200'}`}>
                     {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -505,7 +508,7 @@ const EditExperiencePage = () => {
                 <p className="text-xs text-slate-400">{notIncludedCount}/{MAX_NOT_INCLUDED} not included items used.</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-                <h3 className="font-clash text-lg font-bold text-slate-900">Details tab answers</h3>
+                <h3 className="text-base font-semibold text-slate-900">Details tab answers</h3>
                 <p className="mt-1 text-sm text-slate-500">These answers show on the experience detail page as accordion sections.</p>
                 <div className="mt-4 grid gap-4">
                   {DETAIL_SECTION_FIELDS.map((field) => (
@@ -527,7 +530,7 @@ const EditExperiencePage = () => {
               </div>
 
               <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
-                <h3 className="font-clash text-lg font-bold text-slate-900">Storytelling profile</h3>
+                <h3 className="text-base font-semibold text-slate-900">Storytelling profile</h3>
                 <div className="mt-4 grid gap-4">
                   <div className="flex flex-col gap-1">
                     <label className="text-sm font-semibold text-gray-700">Host story</label>
@@ -548,7 +551,7 @@ const EditExperiencePage = () => {
               </div>
 
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
-                <h3 className="font-clash text-lg font-bold text-slate-900">Booking flexibility, micro-format, and languages</h3>
+                <h3 className="text-base font-semibold text-slate-900">Booking flexibility, micro-format, and languages</h3>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <Input label="Min advance hours" type="number" value={form.bookingSettings.minAdvanceHours} onChange={(e) => setBookingSetting('minAdvanceHours', Number(e.target.value) || 0)} />
                   <Input label="Max advance days" type="number" value={form.bookingSettings.maxAdvanceDays} onChange={(e) => setBookingSetting('maxAdvanceDays', Number(e.target.value) || 1)} />
@@ -622,7 +625,7 @@ const EditExperiencePage = () => {
           {/* Location tab */}
           {tab === 'location' && (
             <div className="flex flex-col gap-4">
-              <h2 className="font-clash text-lg font-bold text-gray-900">Location</h2>
+              <h2 className="text-base font-semibold text-gray-900">Location</h2>
               <Input label="City" maxLength={MAX_CITY_LENGTH} error={errors.city} value={form.location.city} onChange={(e) => setLoc('city', e.target.value)} />
               <p className="-mt-2 text-right text-xs text-slate-400">{(form.location.city || '').length}/{MAX_CITY_LENGTH}</p>
               <Input label="Country" maxLength={MAX_COUNTRY_LENGTH} error={errors.country} value={form.location.country} onChange={(e) => setLoc('country', e.target.value)} />
@@ -635,7 +638,7 @@ const EditExperiencePage = () => {
           {/* Availability tab */}
           {tab === 'availability' && (
             <div className="flex flex-col gap-4">
-              <h2 className="font-clash text-lg font-bold text-gray-900">Manage Availability</h2>
+              <h2 className="text-base font-semibold text-gray-900">Manage Availability</h2>
               <p className="text-sm text-gray-500">Standard limit: {(exp.availability?.length || 0)}/{MAX_AVAILABILITY_SLOTS} slots used.</p>
 
               {/* Add new slot */}
@@ -695,7 +698,7 @@ const EditExperiencePage = () => {
               </div>
 
               <div className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4">
-                <h3 className="font-clash text-lg font-bold text-slate-900">Sync and rewards</h3>
+                <h3 className="text-base font-semibold text-slate-900">Sync and rewards</h3>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-1">
                     <label className="text-sm font-semibold text-gray-700">Sync mode</label>
@@ -720,7 +723,7 @@ const EditExperiencePage = () => {
           {/* Itinerary tab */}
           {tab === 'itinerary' && (
             <div className="flex flex-col gap-4">
-              <h2 className="font-clash text-lg font-bold text-gray-900">Itinerary Steps</h2>
+              <h2 className="text-base font-semibold text-gray-900">Itinerary Steps</h2>
               <p className="text-sm text-gray-500">Standard limit: {(form.itinerary || []).length}/{MAX_ITINERARY_STEPS} steps used.</p>
               {errors.itinerary ? <p className="text-xs text-rose-600">{errors.itinerary}</p> : null}
 
@@ -816,7 +819,7 @@ const EditExperiencePage = () => {
               )}
 
               <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-4">
-                <h3 className="font-clash text-lg font-bold text-slate-900">Suggested pathways</h3>
+                <h3 className="text-base font-semibold text-slate-900">Suggested pathways</h3>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <Input label="Journey title" value={newPathway.title} onChange={(e) => setNewPathway((prev) => ({ ...prev, title: e.target.value }))} />
                   <Input label="Duration label" value={newPathway.durationLabel} onChange={(e) => setNewPathway((prev) => ({ ...prev, durationLabel: e.target.value }))} />
@@ -833,9 +836,9 @@ const EditExperiencePage = () => {
                   <div className="flex flex-col gap-1">
                     <label className="text-sm font-semibold text-gray-700">Best time of day</label>
                     <select value={newPathway.idealTime} onChange={(e) => setNewPathway((prev) => ({ ...prev, idealTime: e.target.value }))} className="border rounded-lg px-4 py-3 text-sm outline-none focus:border-emerald-400 border-gray-200">
-                      <option value="morning">Morning</option>
-                      <option value="afternoon">Afternoon</option>
-                      <option value="evening">Evening</option>
+                      <option value="morning">{t("search_morning")}</option>
+                      <option value="afternoon">{t("search_afternoon")}</option>
+                      <option value="evening">{t("search_evening")}</option>
                       <option value="anytime">Anytime</option>
                     </select>
                   </div>
@@ -866,7 +869,7 @@ const EditExperiencePage = () => {
               </div>
 
               <div className="rounded-2xl border border-sky-200 bg-sky-50/60 p-4">
-                <h3 className="font-clash text-lg font-bold text-slate-900">Translations</h3>
+                <h3 className="text-base font-semibold text-slate-900">Translations</h3>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <Input label="Language code" value={newTranslation.languageCode} onChange={(e) => setNewTranslation((prev) => ({ ...prev, languageCode: e.target.value }))} />
                   <Input label="Language label" value={newTranslation.languageLabel} onChange={(e) => setNewTranslation((prev) => ({ ...prev, languageLabel: e.target.value }))} />
@@ -891,7 +894,7 @@ const EditExperiencePage = () => {
           {/* Photos tab */}
           {tab === 'photos' && (
             <div className="flex flex-col gap-4">
-              <h2 className="font-clash text-lg font-bold text-gray-900">Photos</h2>
+              <h2 className="text-base font-semibold text-gray-900">Photos</h2>
               <p className="text-sm text-gray-500">Standard limit: {totalPhotoCount}/{MAX_IMAGES} photos used.</p>
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-semibold text-gray-700">Upload New Photos</label>

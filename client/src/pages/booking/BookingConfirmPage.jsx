@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useSelector } from 'react-redux'
@@ -19,6 +20,8 @@ const parseGroupEmails = (value) => {
 }
 
 const BookingConfirmPage = () => {
+  const { t } = useTranslation();
+
   const { id } = useParams()
   const { user } = useSelector((state) => state.auth)
 
@@ -171,7 +174,7 @@ const BookingConfirmPage = () => {
                       >
                         <span className="min-w-0 truncate text-slate-600">
                           {share.email}
-                          {isYou && <span className="ml-1 text-emerald-600">You</span>}
+                          {isYou && <span className="ml-1 text-emerald-600">{t("footer_subscribed")}</span>}
                           {share.isLeader && <span className="ml-1 text-slate-400">(leader)</span>}
                         </span>
                         <div className="flex items-center justify-between gap-3 sm:justify-end">
@@ -194,7 +197,7 @@ const BookingConfirmPage = () => {
 
             <div className="flex gap-2 border-t border-slate-100 px-6 pb-5 pt-1">
               <Link to="/my-bookings" className="flex-1">
-                <Button fullWidth size="sm">My bookings</Button>
+                <Button fullWidth size="sm">{t("nav_my_bookings")}</Button>
               </Link>
               <Link to="/search" className="flex-1">
                 <Button fullWidth size="sm" variant="secondary">Explore more</Button>

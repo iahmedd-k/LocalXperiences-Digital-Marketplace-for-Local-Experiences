@@ -4,7 +4,7 @@ import { motion as Motion } from "framer-motion";
 import { getExperiences, getFeatured } from "../services/experienceService.js";
 import useWishlist from "../hooks/useWishlist.js";
 import { ANIMATION_EASE, ANIMATION_TIMINGS } from "../config/constants.js";
-import useTranslation from "../hooks/useTranslation.js";
+import useTranslation from '../hooks/useTranslation.js';
 import ExperienceCard from "./experience/ExperienceCard.jsx";
 
 const flowContainer = {

@@ -3,7 +3,7 @@ import { useCurrency } from "./Currencycontext";
 import { Link, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { PreferencesButton, PreferencesModal } from "./PreferencesModal";
-import useTranslation from "../hooks/useTranslation";
+import useTranslation from '../hooks/useTranslation.js';
 
 const NAV_ITEMS = [
   { key: "Home", labelKey: "nav_home", to: "/" },
@@ -171,8 +171,7 @@ export default function Navbar({ activeNav, setActiveNav, onMenuToggle, isDashbo
               <div className="flex items-center justify-center rounded-[10px] bg-white shadow-sm" style={{ width: 32, height: 32 }}>
                 <img src="/logo-localx.svg" alt="Logo" style={{ width: 22, height: 22, objectFit: "contain" }} />
               </div>
-              <span style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 800, letterSpacing: "-.02em", color: isHome ? "#fff" : "#0f2d1a", fontSize: "1rem" }}>
-                Local<span style={{ color: "#34E0A1" }}>X</span>
+              <span style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 800, letterSpacing: "-.02em", color: isHome ? "#fff" : "#0f2d1a", fontSize: "1rem" }}>{t("hero_headline_local")}<span style={{ color: "#34E0A1" }}>X</span>
               </span>
             </Link>
           </div>
@@ -183,8 +182,7 @@ export default function Navbar({ activeNav, setActiveNav, onMenuToggle, isDashbo
               <div className="flex items-center justify-center rounded-[10px] bg-white shadow-sm" style={{ width: 30, height: 30 }}>
                 <img src="/logo-localx.svg" alt="Logo" style={{ width: 20, height: 20, objectFit: "contain" }} />
               </div>
-              <span style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 800, letterSpacing: "-.02em", color: isHome ? "#fff" : "#0f2d1a", fontSize: ".9rem" }}>
-                Local<span style={{ color: "#34E0A1" }}>X</span>
+              <span style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 800, letterSpacing: "-.02em", color: isHome ? "#fff" : "#0f2d1a", fontSize: ".9rem" }}>{t("hero_headline_local")}<span style={{ color: "#34E0A1" }}>X</span>
               </span>
             </Link>
 

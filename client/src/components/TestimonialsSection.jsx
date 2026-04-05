@@ -1,3 +1,4 @@
+import useTranslation from '../hooks/useTranslation.js';
 import { TESTIMONIALS } from "../homeData.js";
 import { Link } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
@@ -109,23 +110,19 @@ function ReviewCard({ t }) {
 }
 
 export default function TestimonialsSection() {
+  const { t } = useTranslation();
+
   return (
     <section className="home-section" style={{ background: "#f8fdf9", padding: "80px 0 88px", borderTop: "1px solid #E8F5EE" }}>
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 clamp(16px, 4vw, 28px)" }}>
 
         {/* Header */}
         <Motion.div className="mb-12 home-row-header" variants={flowContainer} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.35 }}>
-          <Motion.h2 variants={flowItem} style={{ fontFamily: "'Poppins', sans-serif", fontSize: "clamp(1.35rem,2.2vw,1.85rem)", fontWeight: 600, color: "#0f2d1a", margin: "0 0 8px", letterSpacing: "-.01em" }}>
-            Loved by Travelers Worldwide
-          </Motion.h2>
-          <Motion.p variants={flowItem} className="home-row-sub" style={{ fontFamily: "'Poppins',sans-serif", fontSize: ".86rem", color: "#6B7280", margin: 0 }}>
-            Real experiences, real people — see what our community is saying
-          </Motion.p>
+          <Motion.h2 variants={flowItem} style={{ fontFamily: "'Poppins', sans-serif", fontSize: "clamp(1.35rem,2.2vw,1.85rem)", fontWeight: 600, color: "#0f2d1a", margin: "0 0 8px", letterSpacing: "-.01em" }}>{t("test_title")}</Motion.h2>
+          <Motion.p variants={flowItem} className="home-row-sub" style={{ fontFamily: "'Poppins',sans-serif", fontSize: ".86rem", color: "#6B7280", margin: 0 }}>{t("test_sub")}</Motion.p>
 
           <Motion.div variants={flowItem} className="home-row-link" style={{ marginTop: 8 }}>
-            <Link to="/search" className="no-underline inline-flex items-center gap-1.5" style={{ fontFamily: "'Poppins',sans-serif", fontSize: ".82rem", fontWeight: 600, color: "#00AA6C" }}>
-              View all
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+            <Link to="/search" className="no-underline inline-flex items-center gap-1.5" style={{ fontFamily: "'Poppins',sans-serif", fontSize: ".82rem", fontWeight: 600, color: "#00AA6C" }}>{t("test_view_all")}<svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>

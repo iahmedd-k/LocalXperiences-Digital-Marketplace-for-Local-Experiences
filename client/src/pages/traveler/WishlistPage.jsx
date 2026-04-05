@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import Navbar from '../../components/common/Navbar.jsx'
@@ -15,6 +16,8 @@ const StarIcon = () => (
 )
 
 const WishlistPage = () => {
+  const { t } = useTranslation();
+
   const { toggleWishlist, isPendingFor } = useWishlist()
 
   const { data: wishlist = [], isLoading } = useQuery({
@@ -34,9 +37,7 @@ const WishlistPage = () => {
             Your Collection
           </p>
           <div className="flex items-end justify-between gap-4">
-            <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight">
-              Wishlist
-            </h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight">{t("nav_wishlist")}</h1>
             {!isLoading && wishlist.length > 0 && (
               <span className="shrink-0 text-xs font-semibold text-stone-500 bg-stone-100 border border-stone-200 rounded-full px-3 py-1">
                 {wishlist.length} saved

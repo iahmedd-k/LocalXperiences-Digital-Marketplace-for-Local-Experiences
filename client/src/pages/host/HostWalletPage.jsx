@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
@@ -15,6 +16,8 @@ const getBookingAmount = (booking) => {
 }
 
 const StatCard = ({ label, value, helper, tone = 'slate' }) => {
+  const { t } = useTranslation();
+
   const tones = {
     slate: 'border-slate-200 bg-white text-slate-900',
     emerald: 'border-emerald-200 bg-emerald-50 text-emerald-900',
@@ -23,14 +26,15 @@ const StatCard = ({ label, value, helper, tone = 'slate' }) => {
 
   return (
     <div className={`rounded-2xl border p-5 shadow-sm ${tones[tone]}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold tracking-tight">{value}</p>
+      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="mt-2 text-xl font-semibold tracking-tight">{value}</p>
       {helper ? <p className="mt-1 text-xs text-slate-500">{helper}</p> : null}
     </div>
   )
 }
 
 export default function HostWalletPage() {
+  const { t } = useTranslation();
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ['hostBookings'],
     queryFn: () => getAllHostBookings(),
@@ -55,8 +59,8 @@ export default function HostWalletPage() {
       <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-700">Wallet</p>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Host payouts overview</h1>
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-emerald-700">Wallet</p>
+            <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">Host payouts overview</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
               This page helps explain how host payouts will look once Stripe payouts are integrated. For now, it is an informational preview for booking earnings, platform fee, and host net amount.
             </p>
@@ -98,7 +102,7 @@ export default function HostWalletPage() {
           <section className="rounded-[24px] border border-slate-200 bg-white shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Payout breakdown</h2>
+                <h2 className="text-base font-semibold text-slate-900">Payout breakdown</h2>
                 <p className="text-sm text-slate-500">Bookings that count toward future host payouts</p>
               </div>
               <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
@@ -118,7 +122,7 @@ export default function HostWalletPage() {
                 <table className="min-w-full text-left">
                   <thead className="bg-slate-50">
                     <tr className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                      <th className="px-5 py-3 font-semibold">Experience</th>
+                      <th className="px-5 py-3 font-semibold">{t("card_experience")}</th>
                       <th className="px-5 py-3 font-semibold">Date</th>
                       <th className="px-5 py-3 font-semibold">Guests</th>
                       <th className="px-5 py-3 font-semibold">Full total</th>
@@ -154,7 +158,7 @@ export default function HostWalletPage() {
 
           <section className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
             <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-bold text-slate-900">How this will work later</h2>
+              <h2 className="text-base font-semibold text-slate-900">How this will work later</h2>
               <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
                 <li>Traveler pays through the platform checkout.</li>
                 <li>The platform keeps a 10% marketplace fee.</li>
@@ -164,9 +168,9 @@ export default function HostWalletPage() {
             </div>
 
             <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
-              <h2 className="text-lg font-bold text-emerald-950">Client note</h2>
+              <h2 className="text-base font-semibold text-emerald-950">Payout processing</h2>
               <p className="mt-3 text-sm leading-6 text-emerald-900/80">
-                This wallet page is intentionally informational right now. It helps explain host earnings and payout logic before real Stripe payout integration is connected.
+                The platform fee across these payout bookings is currently {formatPrice(platformFee)}, based on a 10% fee applied to each experience booking. To support secure host payouts and complete payment handling, Stripe integration should be used for the next stage of payout processing.
               </p>
               <div className="mt-4">
                 <Link

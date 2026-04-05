@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSelector } from 'react-redux'
 import toast from 'react-hot-toast'
+import useTranslation from '../hooks/useTranslation.js';
 import Navbar from './Navbar.jsx'
 import Footer from './Footer.jsx'
 import Spinner from './common/Spinner.jsx'
@@ -21,8 +22,9 @@ const CATEGORIES = [
 ]
 
 export const PathwayCard = ({ pathway, onClick, isSaved, onSave }) => {
+  const { t } = useTranslation()
   const hostInitials = pathway.creatorId?.name?.substring(0, 2)?.toUpperCase() || 'LG'
-  const city = pathway.stops?.[0]?.experienceId?.location?.city || 'Local Area'
+  const city = pathway.stops?.[0]?.experienceId?.location?.city || t('browse_local_area')
   const stopCount = pathway.stops?.length || 0
   const hours = Math.max(1, Math.round((pathway.totalDuration || 0) / 60))
 
@@ -57,7 +59,7 @@ export const PathwayCard = ({ pathway, onClick, isSaved, onSave }) => {
           onClick={handleSaveClick}
           className="absolute right-3 top-3 flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white/90 text-base shadow-[0_2px_8px_rgba(0,0,0,.15)]"
           style={{ color: isSaved ? '#e24b4a' : '#888' }}
-          aria-label="Save pathway"
+          aria-label={t('browse_save')}
         >
           {isSaved ? '♥' : '♡'}
         </button>
@@ -72,7 +74,7 @@ export const PathwayCard = ({ pathway, onClick, isSaved, onSave }) => {
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#EAF8F2] text-[10px] font-bold text-[#1a6b4a]">
             {hostInitials}
           </div>
-          <span className="text-xs text-slate-500">by {pathway.creatorId?.name || 'Local Guide'}</span>
+          <span className="text-xs text-slate-500">{t('browse_by_creator')} {pathway.creatorId?.name || t('browse_by_local')}</span>
         </div>
 
         <div className="mt-auto pt-2">
@@ -84,8 +86,7 @@ export const PathwayCard = ({ pathway, onClick, isSaved, onSave }) => {
               {hours} hrs
             </span>
           </div>
-          <p className="text-[1rem] font-semibold text-[#0f2d1a]">
-            from <span className="font-extrabold">{formatPrice(pathway.estimatedCost || 0)}</span>
+          <p className="text-[1rem] font-semibold text-[#0f2d1a]">{t("from")}<span className="font-extrabold">{formatPrice(pathway.estimatedCost || 0)}</span>
           </p>
         </div>
       </div>
@@ -94,6 +95,7 @@ export const PathwayCard = ({ pathway, onClick, isSaved, onSave }) => {
 }
 
 export default function PathwaysBrowse() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [query, setQuery] = useState('')
@@ -114,17 +116,17 @@ export default function PathwaysBrowse() {
     mutationFn: toggleSavePathway,
     onSuccess: (data) => {
       queryClient.invalidateQueries(['pathways'])
-      if (data.isSaved) toast.success('Saved to pathways')
-      else toast.success('Removed from saved pathways')
+      if (data.isSaved) toast.success(t('suggested_journey_saved'))
+      else toast.success(t('suggested_journey_removed'))
     },
     onError: () => {
-      toast.error('Failed to save pathway')
+      toast.error(t('suggested_journey_failed'))
     },
   })
 
   const onSave = (id) => {
     if (!isAuthenticated) {
-      toast.error('Please log in to save pathways')
+      toast.error(t('suggested_journey_login'))
       return navigate('/login')
     }
     toggleSaveMutation.mutate(id)
@@ -142,13 +144,13 @@ export default function PathwaysBrowse() {
       <main className="flex-1">
         <div className="px-6 pb-8 pt-12 text-center">
           <div className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-[#1a6b4a]">
-            Curated journeys
+            {t('browse_curated')}
           </div>
           <h1 className="mb-2 font-playfair text-[42px] font-semibold leading-[1.15] tracking-tight text-slate-900">
-            Discover local pathways
+            {t('browse_discover')}
           </h1>
           <p className="mb-8 text-[15px] font-light text-slate-500">
-            Multi-stop journeys curated by local hosts
+            {t('browse_multi_stop')}
           </p>
 
           <div className="relative mx-auto max-w-[640px]">
@@ -162,7 +164,7 @@ export default function PathwaysBrowse() {
                 onChange={(event) => setQuery(event.target.value)}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
-                placeholder="Search pathways by title or host..."
+                placeholder={t('browse_search_placeholder')}
                 className="flex-1 bg-transparent text-sm text-slate-900 outline-none"
               />
               {query ? (
@@ -171,7 +173,7 @@ export default function PathwaysBrowse() {
                 </button>
               ) : null}
               <button className="whitespace-nowrap rounded-[40px] bg-[#1a6b4a] px-6 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#145a3d]">
-                Search
+                {t('nav_search')}
               </button>
             </div>
           </div>
@@ -197,7 +199,7 @@ export default function PathwaysBrowse() {
         <div className="mx-auto max-w-7xl px-6 pb-16">
           <div className="mb-5 flex items-center justify-between">
             <div className="text-[13px] text-slate-500">
-              {isLoading ? 'Loading...' : `${filtered.length} pathway${filtered.length !== 1 ? 's' : ''}`}
+              {isLoading ? t('browse_loading') : `${filtered.length} ${filtered.length !== 1 ? t('browse_many_pathways') : t('browse_one_pathway')}`}
             </div>
           </div>
 

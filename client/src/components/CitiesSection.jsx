@@ -1,3 +1,4 @@
+import useTranslation from '../hooks/useTranslation.js';
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
@@ -45,7 +46,7 @@ const CITIES = [
   { name: "London",     label: "Royal & Timeless",     img: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&q=85" },
 ];
 
-function CityCard({ city, onClick }) {
+function CityCard({ city, onClick, t }) {
   return (
     <button
       type="button"
@@ -86,15 +87,15 @@ function CityCard({ city, onClick }) {
             fontFamily: "'Poppins', sans-serif", fontSize: ".58rem", fontWeight: 700,
             padding: "3px 9px", borderRadius: 100, letterSpacing: ".06em", textTransform: "uppercase",
           }}
-        >
-          Explore →
-        </div>
+        >{t("cities_explore")}</div>
       </div>
     </button>
   );
 }
 
 export default function CitiesSection() {
+  const { t } = useTranslation();
+
   const navigate = useNavigate();
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -142,12 +143,8 @@ export default function CitiesSection() {
                 fontSize: "clamp(1.35rem, 2.4vw, 1.95rem)",
                 fontWeight: 600, color: "#0f2d1a", margin: "0 0 5px", letterSpacing: "-.01em",
               }}
-            >
-              Iconic Places You Need to See
-            </h2>
-            <p className="home-row-sub" style={{ fontFamily: "'Poppins', sans-serif", fontSize: ".88rem", color: "#6B7280", margin: 0 }}>
-              Click a city to explore its local experiences
-            </p>
+            >{t("cities_title")}</h2>
+            <p className="home-row-sub" style={{ fontFamily: "'Poppins', sans-serif", fontSize: ".88rem", color: "#6B7280", margin: 0 }}>{t("cities_sub")}</p>
           </Motion.div>
 
           {/* Arrow controls */}
@@ -170,7 +167,7 @@ export default function CitiesSection() {
               disabled={!canScrollRight}
               className="arrow-right flex items-center justify-center rounded-full bg-white border border-gray-200 hover:border-emerald-400 hover:shadow-md transition duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ width: 42, height: 42, transitionDuration: ANIMATION_MS.fast }}
-              aria-label="Scroll right"
+              aria-label={t("stories_scroll")}
             >
               <svg width="18" height="18" fill="none" stroke="#0f2d1a" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
@@ -200,7 +197,7 @@ export default function CitiesSection() {
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: ANIMATION_TIMINGS.normal, delay: Math.min(index * 0.05, ANIMATION_TIMINGS.slow), ease: ANIMATION_EASE }}
             >
-              <CityCard city={city} onClick={handleCityClick} />
+              <CityCard city={city} onClick={handleCityClick} t={t} />
             </Motion.div>
           ))}
         </div>

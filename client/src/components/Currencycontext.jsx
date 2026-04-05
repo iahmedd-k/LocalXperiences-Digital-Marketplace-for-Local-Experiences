@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { fetchExchangeRates } from "../services/currencyAndTranslationService";
+import AutoTranslatePage from "./AutoTranslatePage";
 
 const CurrencyContext = createContext(null);
 
 // Full currency list with names
 export const CURRENCIES = [
+  { code: "CNY", name: "Chinese Yuan" },
   { code: "USD", name: "U.S. Dollars" },
   { code: "AFN", name: "Afghan Afghani" },
   { code: "ALL", name: "Albanian Lek" },
@@ -40,7 +42,6 @@ export const CURRENCIES = [
   { code: "XOF", name: "CFA Francs BCEAO" },
   { code: "XPF", name: "CFP Francs" },
   { code: "CLP", name: "Chilean Peso" },
-  { code: "CNY", name: "Chinese Yuan" },
   { code: "COP", name: "Colombian Peso" },
   { code: "KMF", name: "Comorian Franc" },
   { code: "CDF", name: "Congolese Franc" },
@@ -170,6 +171,18 @@ export function CurrencyProvider({ children }) {
     queryClient.invalidateQueries();
   }, [language?.code, queryClient]);
 
+  useEffect(() => {
+    if (!currency?.code) return;
+    // Fetch exchange rates for the selected currency
+    fetchExchangeRates(currency.code).then(rates => {
+      if (rates) {
+        localStorage.setItem("lx_exchange_rates", JSON.stringify(rates));
+      }
+    }).catch(err => console.error("Failed to load exchange rates for currency", err));
+    // Invalidate queries to refetch prices with new currency
+    queryClient.invalidateQueries();
+  }, [currency?.code, queryClient]);
+
   const setCurrency = (cur) => {
     setCurrencyState(cur);
     localStorage.setItem("lx_currency", JSON.stringify(cur));
@@ -190,6 +203,7 @@ export function CurrencyProvider({ children }) {
   return (
     <CurrencyContext.Provider value={providerValue}>
       <div key={appRefreshKey}>
+        <AutoTranslatePage />
         {children}
       </div>
     </CurrencyContext.Provider>

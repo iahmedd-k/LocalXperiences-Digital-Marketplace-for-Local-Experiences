@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
@@ -122,6 +123,8 @@ const SectionHead = ({ children }) => (
 
 // ─── Booking row ──────────────────────────────────────────────────────────────
 const BookingRow = ({ booking }) => {
+  const { t } = useTranslation();
+
   const amount = getBookingDisplayAmount(booking, booking?.contact?.email)
   return (
     <div style={{ padding: '12px 0', borderBottom: '0.5px solid #f3f4f6', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
@@ -387,7 +390,7 @@ const ProfilePage = ({ hideLayout = false }) => {
 
               {isHost ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <Inp label="Phone" value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} placeholder="+92 300 1234567" />
+                  <Inp label={t("checkout_phone")} value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} placeholder="+92 300 1234567" />
                 </div>
               ) : (
                 <>
@@ -400,7 +403,7 @@ const ProfilePage = ({ hideLayout = false }) => {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                     <Sel
-                      label="Language"
+                      label={t("search_language")}
                       value={profile.travelerPreferences.preferredLanguage}
                       onChange={e => setProfile({...profile, travelerPreferences: {...profile.travelerPreferences, preferredLanguage: e.target.value}})}
                       options={[{ value: 'en', label: 'English' }, { value: 'ur', label: 'Urdu' }, { value: 'fr', label: 'French' }, { value: 'es', label: 'Spanish' }]}

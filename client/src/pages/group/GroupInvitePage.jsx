@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import Navbar from '../../components/common/Navbar.jsx'
@@ -9,6 +10,8 @@ import { formatPrice, formatDate } from '../../utils/formatters.js'
 import { getGroupBooking } from '../../services/bookingService.js'
 
 const GroupInvitePage = () => {
+  const { t } = useTranslation();
+
   const { group_id } = useParams()
   const navigate = useNavigate()
   const { data: group, isLoading, isError } = useQuery({
@@ -80,7 +83,7 @@ const GroupInvitePage = () => {
                 <div key={participant.email} className="flex max-w-full items-center gap-2 rounded-full border border-violet-100 bg-violet-50 px-3 py-1 text-xs text-violet-800">
                   <Avatar name={participant.email} size={20} />
                   <span className="truncate">{participant.email}</span>
-                  {participant.status === 'paid' ? <span className="ml-1 text-emerald-700">Paid</span> : null}
+                  {participant.status === 'paid' ? <span className="ml-1 text-emerald-700">{t("checkout_paid")}</span> : null}
                 </div>
               ))}
             </div>

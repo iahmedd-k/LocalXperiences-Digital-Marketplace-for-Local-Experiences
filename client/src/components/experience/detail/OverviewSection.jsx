@@ -1,3 +1,4 @@
+import useTranslation from '../../../hooks/useTranslation.js';
 import { useMemo, useState } from 'react'
 import { CircleHelp, Clock3, Languages, MoveRight, Smartphone, Users } from 'lucide-react'
 import DetailSection from './DetailSection.jsx'
@@ -16,6 +17,8 @@ const OverviewSection = ({
   renderStars,
   facts = [],
 }) => {
+  const { t } = useTranslation();
+
   const [isExpanded, setIsExpanded] = useState(false)
   const trimmedDescription = description?.trim() || ''
   const shouldCollapse = trimmedDescription.length > 220
@@ -29,11 +32,11 @@ const OverviewSection = ({
     <section id="overview" className="scroll-mt-36 rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm sm:p-7">
       <div className="border-b border-slate-200 pb-6">
         <div className="flex flex-wrap items-center gap-6 text-[15px] font-semibold text-slate-900">
-          <span className="border-b border-emerald-700 pb-2">Overview</span>
+          <span className="border-b border-emerald-700 pb-2">{t("exp_overview")}</span>
         </div>
 
         <div className="mt-8">
-          <h2 className="font-clash text-2xl font-bold text-slate-900">About</h2>
+          <h2 className="font-clash text-2xl font-bold text-slate-900">{t("nav_about")}</h2>
           <p className="mt-5 max-w-4xl text-[17px] leading-9 text-slate-700 whitespace-pre-line">
             {visibleDescription}
             {shouldCollapse ? (
@@ -55,7 +58,7 @@ const OverviewSection = ({
       <div className="border-b border-slate-200 py-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <h3 className="font-clash text-xl font-bold text-slate-900">Why travelers love this</h3>
+            <h3 className="font-clash text-xl font-bold text-slate-900">{t("exp_why_love")}</h3>
             <CircleHelp className="h-4 w-4 text-slate-400" />
           </div>
 
@@ -97,9 +100,7 @@ const OverviewSection = ({
             </a>
           </div>
         ) : (
-          <p className="rounded-2xl border border-dashed border-slate-200 px-5 py-6 text-sm text-slate-500">
-            Reviews will appear here once guests start sharing feedback.
-          </p>
+          <p className="rounded-2xl border border-dashed border-slate-200 px-5 py-6 text-sm text-slate-500">{t("exp_no_reviews")}</p>
         )}
       </div>
 

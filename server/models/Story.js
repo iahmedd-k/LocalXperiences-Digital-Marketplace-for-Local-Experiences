@@ -15,6 +15,15 @@ const storySectionSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const storyTranslationSectionSchema = new mongoose.Schema(
+  {
+    heading: { type: String, trim: true, maxlength: 160 },
+    body: { type: String, trim: true, maxlength: 5000 },
+    imageCaption: { type: String, default: '', trim: true, maxlength: 220 },
+  },
+  { _id: false }
+);
+
 const storySchema = new mongoose.Schema(
   {
     hostId: {
@@ -79,6 +88,24 @@ const storySchema = new mongoose.Schema(
     },
     tags: {
       type: [String],
+      default: [],
+    },
+    translations: {
+      type: [
+        {
+          languageCode: { type: String, trim: true, maxlength: 12 },
+          languageLabel: { type: String, trim: true, maxlength: 40 },
+          title: { type: String, trim: true, maxlength: 180 },
+          excerpt: { type: String, trim: true, maxlength: 420 },
+          coverImageAlt: { type: String, trim: true, maxlength: 180 },
+          category: { type: String, trim: true, maxlength: 80 },
+          locationLabel: { type: String, trim: true, maxlength: 120 },
+          sections: {
+            type: [storyTranslationSectionSchema],
+            default: [],
+          },
+        },
+      ],
       default: [],
     },
     isPublished: {

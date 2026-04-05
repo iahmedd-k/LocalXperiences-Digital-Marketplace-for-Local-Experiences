@@ -1,3 +1,4 @@
+import useTranslation from '../hooks/useTranslation.js';
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion as Motion } from "framer-motion";
@@ -50,6 +51,8 @@ const toDistanceKm = (fromLat, fromLng, toLat, toLng) => {
 };
 
 export default function NearYouSection() {
+  const { t } = useTranslation();
+
   const location = useGeolocation();
   const { isSaved, toggleWishlist, isPendingFor } = useWishlist();
 
@@ -126,9 +129,7 @@ export default function NearYouSection() {
               to="/search"
               className="flex items-center gap-1.5 no-underline shrink-0"
               style={{ fontFamily: "'Poppins',sans-serif", fontSize: ".82rem", fontWeight: 600, color: "#00AA6C" }}
-            >
-              View all experiences
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+            >{t("trending_view_all")}<svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>
@@ -137,9 +138,7 @@ export default function NearYouSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 home-card-row" style={{ gap: 20, alignItems: "stretch" }}>
           {isLoading ? (
-            <p style={{ gridColumn: "1 / -1", fontFamily: "'Poppins',sans-serif", fontSize: ".9rem", color: "#6B7280" }}>
-              Detecting location and finding nearby experiences...
-            </p>
+            <p style={{ gridColumn: "1 / -1", fontFamily: "'Poppins',sans-serif", fontSize: ".9rem", color: "#6B7280" }}>{t("near_loading")}</p>
           ) : cards.length ? (
             cards.slice(0, 4).map((exp, index) => (
               <Motion.div
@@ -163,9 +162,7 @@ export default function NearYouSection() {
               </Motion.div>
             ))
           ) : (
-            <p style={{ gridColumn: "1 / -1", fontFamily: "'Poppins',sans-serif", fontSize: ".9rem", color: "#6B7280" }}>
-              No nearby experiences found yet.
-            </p>
+            <p style={{ gridColumn: "1 / -1", fontFamily: "'Poppins',sans-serif", fontSize: ".9rem", color: "#6B7280" }}>{t("near_empty")}</p>
           )}
         </div>
 

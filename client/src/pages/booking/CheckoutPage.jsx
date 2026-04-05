@@ -16,6 +16,7 @@ import {
 } from '../../services/bookingService.js'
 import { getErrorMessage } from '../../utils/helpers.js'
 import { formatPrice, formatDuration } from '../../utils/formatters.js'
+import useTranslation from '../../hooks/useTranslation.js';
 import Navbar from '../../components/common/Navbar.jsx'
 import Spinner from '../../components/common/Spinner.jsx'
 
@@ -192,7 +193,7 @@ const HorizStepper = ({ steps, currentIdx }) => (
 )
 
 /* ─── Back + primary CTA row ─────────────────────────────── */
-const NavRow = ({ onBack, showBack, children }) => (
+const NavRow = ({ onBack, showBack, children, t }) => (
   <div className="mt-6 flex gap-3">
     {showBack && (
       <button
@@ -200,49 +201,49 @@ const NavRow = ({ onBack, showBack, children }) => (
         onClick={onBack}
         className="flex items-center gap-1 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
       >
-        <ChevronLeft /> Back
+        <ChevronLeft /> {t ? t('checkout_back') : 'Back'}
       </button>
     )}
     <div className="flex-1">{children}</div>
   </div>
 )
 
-const Btn = ({ children, onClick, type = 'button', disabled, loading }) => (
+const Btn = ({ children, onClick, type = 'button', disabled, loading, t }) => (
   <button
     type={type}
     onClick={onClick}
     disabled={disabled || loading}
     className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50 transition-colors"
   >
-    {loading ? <><SpinnerIcon /> Processing…</> : children}
+    {loading ? <><SpinnerIcon /> {t ? t('checkout_processing') : 'Processing…'}</> : children}
   </button>
 )
 
 /* ═══════════════════════════════════════════════════════════
    PANEL: Contact
 ══════════════════════════════════════════════════════════════ */
-const ContactPanel = ({ contact, setContact, onNext }) => {
+const ContactPanel = ({ contact, setContact, onNext, t }) => {
   const set = (f, v) => setContact((p) => ({ ...p, [f]: v }))
   const valid = contact.firstName.trim() && contact.lastName.trim() && contact.email.includes('@')
   return (
     <div>
-      <h2 className="text-lg font-semibold text-slate-900">Contact details</h2>
-      <p className="mt-1 mb-5 text-sm text-slate-500">We'll send booking updates to these details.</p>
+      <h2 className="text-lg font-semibold text-slate-900">{t('checkout_contact_details')}</h2>
+      <p className="mt-1 mb-5 text-sm text-slate-500">{t('checkout_updates')}</p>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className={lCls}>First name *</label>
+          <label className={lCls}>{t('checkout_first_name')} {t('checkout_required')}</label>
           <input type="text" value={contact.firstName} onChange={(e) => set('firstName', e.target.value)} className={iCls} placeholder="Sarah" />
         </div>
         <div>
-          <label className={lCls}>Last name *</label>
+          <label className={lCls}>{t('checkout_last_name')} {t('checkout_required')}</label>
           <input type="text" value={contact.lastName} onChange={(e) => set('lastName', e.target.value)} className={iCls} placeholder="Connor" />
         </div>
         <div className="col-span-2">
-          <label className={lCls}>Email *</label>
+          <label className={lCls}>{t('checkout_email')} {t('checkout_required')}</label>
           <input type="email" value={contact.email} onChange={(e) => set('email', e.target.value)} className={iCls} placeholder="sarah@example.com" />
         </div>
         <div>
-          <label className={lCls}>Country code</label>
+          <label className={lCls}>{t('checkout_country_code')}</label>
           <select value={contact.phoneCountry} onChange={(e) => set('phoneCountry', e.target.value)} className={iCls}>
             <option value="+1">United States (+1)</option>
             <option value="+44">United Kingdom (+44)</option>
@@ -251,12 +252,12 @@ const ContactPanel = ({ contact, setContact, onNext }) => {
           </select>
         </div>
         <div>
-          <label className={lCls}>Phone</label>
+          <label className={lCls}>{t('checkout_phone')}</label>
           <input type="tel" value={contact.phoneNumber} onChange={(e) => set('phoneNumber', e.target.value)} className={iCls} placeholder="555 0100" />
         </div>
       </div>
       <NavRow showBack={false}>
-        <Btn onClick={onNext} disabled={!valid}>Continue →</Btn>
+        <Btn onClick={onNext} disabled={!valid} t={t}>{t('checkout_continue')}</Btn>
       </NavRow>
     </div>
   )
@@ -265,7 +266,7 @@ const ContactPanel = ({ contact, setContact, onNext }) => {
 /* ═══════════════════════════════════════════════════════════
    PANEL: Options
 ══════════════════════════════════════════════════════════════ */
-const OptionsPanel = ({ experience, bookingOptions, setBookingOptions, onNext, onBack }) => {
+const OptionsPanel = ({ experience, bookingOptions, setBookingOptions, onNext, onBack, t }) => {
   const splitOn  = bookingOptions.splitPayment
   const collabOn = bookingOptions.collaboration.joinMode !== 'solo'
   const allowSplit  = experience?.bookingSettings?.allowSplitPayments
@@ -279,25 +280,25 @@ const OptionsPanel = ({ experience, bookingOptions, setBookingOptions, onNext, o
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-slate-900">Booking options</h2>
-      <p className="mt-1 mb-5 text-sm text-slate-500">Customize how you'd like to book and pay.</p>
+      <h2 className="text-lg font-semibold text-slate-900">{t('checkout_booking_options')}</h2>
+      <p className="mt-1 mb-5 text-sm text-slate-500">{t('checkout_customize')}</p>
       <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
         {allowSplit && (
           <div className="flex items-center gap-3 bg-white px-4 py-4">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-base">💳</span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-800">Split payment</p>
-              <p className="text-xs text-slate-500">Pay a deposit now, the rest before the experience.</p>
+              <p className="text-sm font-medium text-slate-800">{t('checkout_split_payment')}</p>
+              <p className="text-xs text-slate-500">{t('checkout_deposit_info')}</p>
             </div>
             <Toggle checked={splitOn} onChange={toggleSplit} />
           </div>
         )}
         {allowCollab && (
           <div className="flex items-center gap-3 bg-white px-4 py-4">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-base">👥</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-base\">👥</span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-800">Group booking</p>
-              <p className="text-xs text-slate-500">Book with friends and split the cost evenly.</p>
+              <p className="text-sm font-medium text-slate-800">{t('checkout_group_booking')}</p>
+              <p className="text-xs text-slate-500">{t('checkout_group_info')}</p>
             </div>
             <Toggle checked={collabOn} onChange={toggleCollab} />
           </div>
@@ -319,7 +320,7 @@ const OptionsPanel = ({ experience, bookingOptions, setBookingOptions, onNext, o
         </div>
       )}
       <NavRow showBack onBack={onBack}>
-        <Btn onClick={onNext}>Continue →</Btn>
+        <Btn onClick={onNext}>{t("checkout_continue")}</Btn>
       </NavRow>
     </div>
   )
@@ -336,7 +337,7 @@ const GroupPanel = ({ bookingOptions, setBookingOptions, onNext, onBack }) => {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-slate-900">Group details</h2>
+      <h2 className="text-lg font-semibold text-slate-900">{t("checkout_group_details")}</h2>
       <p className="mt-1 mb-5 text-sm text-slate-500">Create a new group or join an existing one.</p>
       <div className="mb-4 inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
         {[{ v: 'create', l: 'Create group' }, { v: 'join', l: 'Join existing' }].map(({ v, l }) => (
@@ -404,7 +405,7 @@ const GroupPanel = ({ bookingOptions, setBookingOptions, onNext, onBack }) => {
           )}
       </div>
       <NavRow showBack onBack={onBack}>
-        <Btn onClick={onNext} disabled={!valid}>Continue →</Btn>
+        <Btn onClick={onNext} disabled={!valid}>{t("checkout_continue")}</Btn>
       </NavRow>
     </div>
   )
@@ -449,8 +450,8 @@ const InvitePanel = ({ bookingOptions, setBookingOptions, contact, pricing, expe
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-slate-900">Invite friends</h2>
-      <p className="mt-1 mb-5 text-sm text-slate-500">Add friend emails. The cost splits evenly across everyone in the group.</p>
+      <h2 className="text-lg font-semibold text-slate-900">{t("checkout_invite_friends")}</h2>
+      <p className="mt-1 mb-5 text-sm text-slate-500">{t("checkout_split_info")}</p>
 
       {friendEmails.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-1.5">
@@ -476,9 +477,7 @@ const InvitePanel = ({ bookingOptions, setBookingOptions, contact, pricing, expe
           type="button"
           onClick={addEmail}
           className="rounded-lg border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-        >
-          Add
-        </button>
+        >{t("checkout_add")}</button>
       </div>
       <p className="mb-4 text-[11px] text-slate-400">Press Enter or comma to add. Duplicates are ignored.</p>
       {!isJoin && (
@@ -498,7 +497,7 @@ const InvitePanel = ({ bookingOptions, setBookingOptions, contact, pricing, expe
                 <div className="flex items-center gap-2 min-w-0 mr-2">
                   <span className="truncate text-slate-700">{email}</span>
                   {idx === 0 && (
-                    <span className="shrink-0 rounded-full bg-emerald-200 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-emerald-800">You</span>
+                    <span className="shrink-0 rounded-full bg-emerald-200 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-emerald-800">{t("footer_subscribed")}</span>
                   )}
                 </div>
                 <span className="shrink-0 font-semibold text-emerald-800">{formatPrice(shareTotal)}</span>
@@ -615,7 +614,7 @@ const PaymentPanel = ({
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-slate-900">Payment</h2>
+      <h2 className="text-lg font-semibold text-slate-900">{t("checkout_payment")}</h2>
       <p className="mt-1 mb-5 text-sm text-slate-500">Complete your secure payment to confirm your spot.</p>
 
       {hasSplit && (
@@ -662,12 +661,12 @@ const PaymentPanel = ({
         </div>
 
         <div className="flex items-center gap-1.5 text-xs text-slate-400">
-          <LockIcon /><span>Secured by Stripe · Card details are never stored</span>
+          <LockIcon /><span>{t("checkout_secured")}</span>
         </div>
 
         <div className="flex items-start gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2.5">
           <CheckIcon cls="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
-          <span className="text-xs text-emerald-700">Free cancellation up to 24 hours before the experience.</span>
+          <span className="text-xs text-emerald-700">{t("checkout_cancellation")}</span>
         </div>
 
         <div className="flex gap-3 pt-1">
@@ -676,14 +675,13 @@ const PaymentPanel = ({
             onClick={onBack}
             className="flex items-center gap-1 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
           >
-            <ChevronLeft /> Back
-          </button>
+            <ChevronLeft />{t("checkout_back")}</button>
           <button
             type="submit"
             disabled={loading}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-700 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 transition-colors"
           >
-            {loading ? <><SpinnerIcon /> Processing…</> : <>Confirm &amp; pay {formatPrice(dueNow)}</>}
+            {loading ? <><SpinnerIcon />{t("checkout_processing")}</> : <>Confirm &amp; pay {formatPrice(dueNow)}</>}
           </button>
         </div>
         <p className="text-center text-xs text-slate-400">No hidden charges · Encrypted payment</p>
@@ -729,13 +727,12 @@ const DonePanel = ({ contact, bookingOptions, pricing, experience, guests, booki
         <CheckIcon cls="h-8 w-8 text-emerald-600" />
       </div>
       <h2 className="text-xl font-bold text-slate-900">You're booked!</h2>
-      <p className="mt-2 text-sm text-slate-500">
-        Confirmation sent to <span className="font-medium text-slate-700">{contact.email}</span>
+      <p className="mt-2 text-sm text-slate-500">{t("checkout_confirmation_sent")}<span className="font-medium text-slate-700">{contact.email}</span>
       </p>
 
       {isCollab && (
         <div className="mt-5 text-left rounded-xl border border-slate-100 bg-slate-50 p-4">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Group payment status</p>
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t("checkout_payment_status")}</p>
           <div className="space-y-2">
             {bookingLoading ? (
               <div className="text-center text-xs text-slate-400 py-2">Fetching latest status…</div>
@@ -747,7 +744,7 @@ const DonePanel = ({ contact, bookingOptions, pricing, experience, guests, booki
                   <div key={share.email} className="flex items-center justify-between rounded-lg border border-slate-100 bg-white px-3 py-2 text-sm">
                     <div className="flex items-center gap-2 min-w-0 mr-2">
                       <span className="truncate text-slate-700">{share.email}</span>
-                      {isYou && <span className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700">You</span>}
+                      {isYou && <span className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700">{t("footer_subscribed")}</span>}
                       {share.isLeader && <span className="ml-1 text-[10px] text-violet-500">(leader)</span>}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -763,7 +760,7 @@ const DonePanel = ({ contact, bookingOptions, pricing, experience, guests, booki
               <div className="text-center text-xs text-slate-400 py-2">No group payment data available.</div>
             )}
           </div>
-          <p className="mt-3 text-[11px] text-slate-400">Friends have 48 hours to complete their payment.</p>
+          <p className="mt-3 text-[11px] text-slate-400">{t("checkout_friends_48h")}</p>
         </div>
       )}
 
@@ -772,16 +769,12 @@ const DonePanel = ({ contact, bookingOptions, pricing, experience, guests, booki
           <Link
             to={`/booking/confirm/${bookingId}`}
             className="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white no-underline hover:bg-emerald-800 transition-colors"
-          >
-            View booking details
-          </Link>
+          >{t("checkout_view_booking")}</Link>
         )}
         <Link
           to="/"
           className="inline-flex items-center justify-center rounded-xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-600 no-underline hover:bg-slate-50 transition-colors"
-        >
-          Back to home
-        </Link>
+        >{t("checkout_back_home")}</Link>
       </div>
     </div>
   )
@@ -940,7 +933,7 @@ const SummaryPanel = ({ experience, selectedSlot, guests, pricing, bookingOption
               <div key={member.email} className="flex items-center gap-2 rounded-lg bg-violet-50 px-3 py-2 text-xs">
                 <div className={`h-2 w-2 shrink-0 rounded-full ${member.status === 'paid' ? 'bg-emerald-500' : 'bg-amber-400'}`} />
                 <span className="flex-1 truncate text-violet-800">{member.email}</span>
-                {member.email === userEmail && <span className="text-[9px] font-semibold uppercase text-violet-400">you</span>}
+                {member.email === userEmail && <span className="text-[9px] font-semibold uppercase text-violet-400">{t("near_you")}</span>}
                 <span className={`font-semibold ${member.status === 'paid' ? 'text-emerald-600' : 'text-amber-600'}`}>
                   {member.status === 'paid' ? 'Paid' : 'Pending'}
                 </span>
@@ -996,6 +989,7 @@ const CenteredCard = ({ emoji, title, subtitle, actions }) => (
    PAGE — CheckoutPage
 ══════════════════════════════════════════════════════════════ */
 const CheckoutPage = () => {
+  const { t } = useTranslation()
   const { user }         = useSelector((s) => s.auth)
   const { experienceId } = useParams()
   const [urlParams]      = useSearchParams()
@@ -1219,7 +1213,7 @@ const CheckoutPage = () => {
               <div className="border-t border-slate-100 mb-6" />
 
               {currentStepId === 'contact' && (
-                <ContactPanel contact={contact} setContact={setContact} onNext={goNext} />
+                <ContactPanel contact={contact} setContact={setContact} onNext={goNext} t={t} />
               )}
               {currentStepId === 'options' && enrichedExp && (
                 <OptionsPanel
@@ -1228,6 +1222,7 @@ const CheckoutPage = () => {
                   setBookingOptions={setBookingOptions}
                   onNext={goNext}
                   onBack={goBack}
+                  t={t}
                 />
               )}
               {currentStepId === 'group' && (

@@ -1,3 +1,4 @@
+import useTranslation from '../hooks/useTranslation.js';
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -72,6 +73,8 @@ const flowItem = {
 };
 
 export default function BecomeAHostSection() {
+  const { t } = useTranslation();
+
   const [openIdx, setOpenIdx] = useState(-1);
   const { isAuthenticated, user } = useSelector((s) => s.auth);
   const dispatch = useDispatch();
@@ -122,14 +125,11 @@ export default function BecomeAHostSection() {
             For Local Hosts
           </Motion.div>
 
-          <Motion.h2 variants={flowItem} style={{ fontFamily: "'Poppins', sans-serif", fontSize: "clamp(1.2rem,1.9vw,1.58rem)", fontWeight: 600, color: "#0f2d1a", margin: "0 0 8px", letterSpacing: "-.01em", lineHeight: 1.25 }}>
-            Turn Your Passion Into a<br />
-            <em style={{ fontStyle: "italic", color: "#00AA6C" }}>Thriving Experience</em>
+          <Motion.h2 variants={flowItem} style={{ fontFamily: "'Poppins', sans-serif", fontSize: "clamp(1.2rem,1.9vw,1.58rem)", fontWeight: 600, color: "#0f2d1a", margin: "0 0 8px", letterSpacing: "-.01em", lineHeight: 1.25 }}>{t("host_title_1")}<br />
+            <em style={{ fontStyle: "italic", color: "#00AA6C" }}>{t("host_title_2")}</em>
           </Motion.h2>
 
-          <Motion.p variants={flowItem} style={{ fontFamily: "'Poppins',sans-serif", fontSize: ".78rem", color: "#6B7280", lineHeight: 1.6, margin: "0 0 18px", maxWidth: 340 }}>
-            You know your city best. Share it with the world — and earn doing what you love.
-          </Motion.p>
+          <Motion.p variants={flowItem} style={{ fontFamily: "'Poppins',sans-serif", fontSize: ".78rem", color: "#6B7280", lineHeight: 1.6, margin: "0 0 18px", maxWidth: 340 }}>{t("host_sub")}</Motion.p>
 
           {/* Accordion */}
           <Motion.div variants={flowItem} className="flex flex-col mb-5">
@@ -213,9 +213,7 @@ export default function BecomeAHostSection() {
                 to="/host/dashboard"
                 className="no-underline inline-flex items-center gap-1.5"
                 style={{ padding: "9px 22px", borderRadius: 100, background: "#0f2d1a", color: "#fff", fontFamily: "'Poppins',sans-serif", fontSize: ".78rem", fontWeight: 700 }}
-              >
-                Host Dashboard
-                <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+              >{t("host_cta_dashboard")}<svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </Link>
@@ -225,9 +223,7 @@ export default function BecomeAHostSection() {
               to="/become-host"
               className="no-underline inline-flex items-center gap-1.5"
               style={{ padding: "9px 18px", borderRadius: 100, background: "transparent", color: "#6B7280", border: "1.5px solid #E5E7EB", fontFamily: "'Poppins',sans-serif", fontSize: ".78rem", fontWeight: 600 }}
-            >
-              Learn More
-              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+            >{t("host_cta_learn")}<svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>

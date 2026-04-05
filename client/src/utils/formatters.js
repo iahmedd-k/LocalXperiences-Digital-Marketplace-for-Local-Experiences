@@ -16,7 +16,8 @@ export const formatPrice = (priceInUSD, forceCurrency) => {
   let finalPrice = num;
   if (currencyCode !== 'USD') {
     try {
-      const rates = JSON.parse(localStorage.getItem('lx_exchange_rates'));
+      const storedData = JSON.parse(localStorage.getItem('lx_exchange_rates'));
+      const rates = storedData?.conversion_rates || storedData;
       if (rates && rates[currencyCode]) {
         finalPrice = num * rates[currencyCode];
       }

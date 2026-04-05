@@ -1,3 +1,4 @@
+import useTranslation from '../hooks/useTranslation.js';
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -43,6 +44,8 @@ const BOTTOM_LINKS = [
 ];
 
 export default function Footer() {
+  const { t } = useTranslation();
+
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
 
@@ -60,8 +63,7 @@ export default function Footer() {
             >
               <img src="/logo-localx.svg" alt="LocalXperiences logo" style={{ width: 26, height: 26, objectFit: "contain" }} />
             </div>
-            <span style={{ fontSize: "1rem", fontWeight: 800, color: "#fff", letterSpacing: "-.02em" }}>
-              Local<span style={{ color: "#34E0A1" }}>Xperiences</span>
+            <span style={{ fontSize: "1rem", fontWeight: 800, color: "#fff", letterSpacing: "-.02em" }}>{t("hero_headline_local")}<span style={{ color: "#34E0A1" }}>Xperiences</span>
             </span>
           </div>
 
@@ -69,9 +71,7 @@ export default function Footer() {
             Discover, book, and share unique local experiences curated for every traveler and local adventurer.
           </p>
 
-          <p style={{ fontSize: ".72rem", fontWeight: 600, color: "rgba(255,255,255,.5)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 10 }}>
-            Stay in the loop
-          </p>
+          <p style={{ fontSize: ".72rem", fontWeight: 600, color: "rgba(255,255,255,.5)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 10 }}>{t("footer_newsletter")}</p>
 
           {subscribed ? (
             <div className="flex items-center gap-2" style={{ color: "#34E0A1", fontSize: ".82rem", fontWeight: 600 }}>
@@ -95,9 +95,7 @@ export default function Footer() {
                 style={{ background: "#00AA6C", border: "none", color: "#fff", padding: "9px 16px", cursor: "pointer", fontFamily: "'Poppins',sans-serif", fontSize: ".76rem", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0, transition: "background .2s" }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "#008A56")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "#00AA6C")}
-              >
-                Subscribe
-              </button>
+              >{t("footer_subscribe")}</button>
             </div>
           )}
         </div>

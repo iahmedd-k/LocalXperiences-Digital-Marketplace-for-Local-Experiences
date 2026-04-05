@@ -1,3 +1,4 @@
+import useTranslation from '../hooks/useTranslation.js';
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
@@ -33,6 +34,8 @@ const flowItem = {
 };
 
 export default function PickedForYouSection() {
+  const { t } = useTranslation();
+
   const { isAuthenticated } = useSelector((s) => s.auth);
   const { isSaved, toggleWishlist, isPendingFor } = useWishlist();
 
@@ -70,9 +73,7 @@ export default function PickedForYouSection() {
                 margin: "0 0 4px",
                 letterSpacing: "-.01em",
               }}
-            >
-              Picked For You
-            </h2>
+            >{t("picked_title")}</h2>
           </Motion.div>
 
           <Motion.div variants={flowItem} className="home-row-link">
@@ -80,9 +81,7 @@ export default function PickedForYouSection() {
               to="/search"
               className="flex items-center gap-1.5 no-underline shrink-0"
               style={{ fontFamily: "'Poppins',sans-serif", fontSize: ".78rem", fontWeight: 600, color: "#00AA6C" }}
-            >
-              View all experiences
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+            >{t("trending_view_all")}<svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>
@@ -96,7 +95,7 @@ export default function PickedForYouSection() {
             <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-emerald-700 border border-slate-200">
               <Compass className="h-5 w-5" strokeWidth={2.1} />
             </div>
-            <p className="text-sm font-semibold text-slate-700 mb-1">Nothing here yet</p>
+            <p className="text-sm font-semibold text-slate-700 mb-1">{t("picked_empty_title")}</p>
             <p className="text-xs text-slate-500">
               Book or save a few experiences and we'll suggest better matches here.
             </p>

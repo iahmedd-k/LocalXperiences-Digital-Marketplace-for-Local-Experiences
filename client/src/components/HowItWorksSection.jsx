@@ -1,3 +1,4 @@
+import useTranslation from '../hooks/useTranslation.js';
 import { motion as Motion } from "framer-motion";
 import { ANIMATION_EASE, ANIMATION_TIMINGS } from "../config/constants.js";
 
@@ -43,20 +44,19 @@ const flowItem = {
 };
 
 export default function HowItWorksSection() {
+  const { t } = useTranslation();
+
   return (
     <section className="home-section" style={{ background: "#f8fdf9", padding: "64px 0", borderTop: "1px solid #E8F5EE", borderBottom: "1px solid #E8F5EE" }}>
       <div className="grid grid-cols-1 lg:grid-cols-2" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 clamp(16px, 4vw, 28px)", gap: 64, alignItems: "center" }}>
 
         {/* Left */}
         <Motion.div variants={flowContainer} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.35 }}>
-          <Motion.h2 variants={flowItem} style={{ fontFamily: "'Poppins', sans-serif", fontSize: "clamp(1.35rem,2.4vw,1.95rem)", fontWeight: 600, color: "#0f2d1a", margin: "0 0 14px", letterSpacing: "-.01em", lineHeight: 1.22 }}>
-            From Idea to Experience<br />
-            <em style={{ fontStyle: "italic", color: "#00AA6C" }}>in Three Simple Steps</em>
+          <Motion.h2 variants={flowItem} style={{ fontFamily: "'Poppins', sans-serif", fontSize: "clamp(1.35rem,2.4vw,1.95rem)", fontWeight: 600, color: "#0f2d1a", margin: "0 0 14px", letterSpacing: "-.01em", lineHeight: 1.22 }}>{t("hiw_title_1")}<br />
+            <em style={{ fontStyle: "italic", color: "#00AA6C" }}>{t("hiw_title_2")}</em>
           </Motion.h2>
 
-          <Motion.p variants={flowItem} style={{ fontFamily: "'Poppins',sans-serif", fontSize: ".86rem", color: "#6B7280", lineHeight: 1.75, margin: "0 0 28px", maxWidth: 360 }}>
-            No complicated forms, no waiting. Find, book, and enjoy authentic local experiences within minutes.
-          </Motion.p>
+          <Motion.p variants={flowItem} style={{ fontFamily: "'Poppins',sans-serif", fontSize: ".86rem", color: "#6B7280", lineHeight: 1.75, margin: "0 0 28px", maxWidth: 360 }}>{t("hiw_sub")}</Motion.p>
 
           <Motion.button
             variants={flowItem}
@@ -64,9 +64,7 @@ export default function HowItWorksSection() {
             style={{ padding: "11px 28px", borderRadius: 100, background: "#0f2d1a", color: "#fff", border: "none", fontFamily: "'Poppins',sans-serif", fontSize: ".85rem", fontWeight: 700, boxShadow: "0 4px 16px rgba(15,45,26,.2)", transition: "all .2s" }}
             onMouseEnter={(e) => e.currentTarget.style.background = "#00AA6C"}
             onMouseLeave={(e) => e.currentTarget.style.background = "#0f2d1a"}
-          >
-            Start Exploring
-            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+          >{t("hiw_cta")}<svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </Motion.button>

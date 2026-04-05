@@ -8,6 +8,7 @@ import useWishlist from "../../hooks/useWishlist.js";
 import useGeolocation from "../../hooks/useGeolocation.js";
 import { CATEGORIES, DEFAULT_RADIUS } from "../../config/constants.js";
 import { useCurrency } from '../../components/Currencycontext';
+import useTranslation from '../../hooks/useTranslation.js';
 import { formatPrice } from '../../utils/formatters.js';
 import ExperienceCard from "../../components/experience/ExperienceCard.jsx";
 
@@ -89,6 +90,7 @@ const distanceKm = (aLat, aLng, bLat, bLng) => {
 };
 
 export default function SearchPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const location = useGeolocation();
   const { isSaved, toggleWishlist, isPendingFor } = useWishlist();
@@ -331,12 +333,8 @@ export default function SearchPage() {
         <section className="px-4 sm:px-6 pt-8 sm:pt-10 pb-4 sm:pb-6">
           <div className="mx-auto max-w-7xl text-center">
             {/* FIX: smaller base font on mobile, scale up on sm+ */}
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-[#0f2d1a] tracking-tight leading-tight">
-              Discover Local Experiences
-            </h1>
-            <p className="mt-2 text-xs sm:text-sm text-slate-500">
-              Search and filter experiences by category, date, and language.
-            </p>
+            <h1 className="text-2xl sm:text-4xl font-extrabold text-[#0f2d1a] tracking-tight leading-tight">{t("search_discover")}</h1>
+            <p className="mt-2 text-xs sm:text-sm text-slate-500">{t("search_subtitle")}</p>
             {cityFromUrl ? (
               <p className="mt-2 text-sm font-semibold text-emerald-700">
                 Showing tours in {cityFromUrl}
@@ -352,7 +350,7 @@ export default function SearchPage() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search experiences"
+                placeholder={t("search_placeholder")}
                 className="flex-1 h-10 outline-none text-sm bg-transparent min-w-0"
               />
               {query ? (
@@ -360,9 +358,7 @@ export default function SearchPage() {
                   type="button"
                   onClick={() => setQuery("")}
                   className="shrink-0 h-8 sm:h-9 rounded-full bg-[#059669] px-4 sm:px-5 text-xs sm:text-sm font-semibold text-white"
-                >
-                  Clear
-                </button>
+                >{t("search_clear")}</button>
               ) : null}
             </div>
           </div>
@@ -487,16 +483,12 @@ export default function SearchPage() {
                           type="button"
                           onClick={() => setDateFilter("All")}
                           className="h-9 rounded-full border border-slate-300 px-3 text-xs text-slate-700"
-                        >
-                          Clear date
-                        </button>
+                        >{t("search_clear_date")}</button>
                         <button
                           type="button"
                           onClick={() => setActivePanel(null)}
                           className="h-10 rounded-full bg-[#003b1f] px-5 text-sm font-semibold text-white"
-                        >
-                          Show results
-                        </button>
+                        >{t("search_show_results")}</button>
                       </div>
                     </div>
                   ) : null}
@@ -519,9 +511,7 @@ export default function SearchPage() {
                 >
                   <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" />
-                  </svg>
-                  Nearby
-                </button>
+                  </svg>{t("search_nearby")}</button>
 
                 {/* Under 1 hour */}
                 <button
@@ -533,9 +523,7 @@ export default function SearchPage() {
                     background: quickOnly ? "#fff7ed" : "#fff",
                     color: quickOnly ? "#7c2d12" : "#374151",
                   }}
-                >
-                  Under 1 hour
-                </button>
+                >{t("search_under_1h")}</button>
 
                 {/* Time of Day */}
                 <div className="relative shrink-0">
@@ -543,9 +531,7 @@ export default function SearchPage() {
                     type="button"
                     onClick={() => setActivePanel(activePanel === "time" ? null : "time")}
                     className="inline-flex items-center gap-1.5 h-10 sm:h-11 rounded-full border border-slate-300 bg-white px-3 sm:px-4 text-xs sm:text-sm text-slate-700 whitespace-nowrap"
-                  >
-                    Time of Day
-                    <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  >{t("search_time")}<svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
                     </svg>
                   </button>
@@ -557,9 +543,7 @@ export default function SearchPage() {
                           onClick={() => setTimeFilter("All")}
                           className="h-9 sm:h-10 rounded-full border px-3 sm:px-4 text-xs sm:text-sm font-medium"
                           style={{ borderColor: timeFilter === "All" ? "#0f2d1a" : "#9FB8AA", color: "#0f2d1a", background: timeFilter === "All" ? "#EAF8F2" : "#fff" }}
-                        >
-                          Any time
-                        </button>
+                        >{t("search_any_time")}</button>
                         {TIME_OPTIONS.map((option) => (
                           <button
                             key={option.value}
@@ -577,9 +561,7 @@ export default function SearchPage() {
                           type="button"
                           onClick={() => setActivePanel(null)}
                           className="h-10 rounded-full bg-[#003b1f] px-5 text-sm font-semibold text-white"
-                        >
-                          Show results
-                        </button>
+                        >{t("search_show_results")}</button>
                       </div>
                     </div>
                   ) : null}
@@ -599,7 +581,7 @@ export default function SearchPage() {
                   </button>
                   {activePanel === "price" ? (
                     <div className="absolute top-full left-0 mt-2 z-50 w-[min(320px,90vw)] rounded-2xl border border-slate-200 bg-white shadow-lg p-5">
-                      <p className="text-lg sm:text-xl font-bold text-[#0f2d1a] mb-1">Price</p>
+                      <p className="text-lg sm:text-xl font-bold text-[#0f2d1a] mb-1">{t("search_price")}</p>
                       <p className="text-sm font-medium mb-5" style={{ color: "#00AA6C" }}>${priceMin} – ${priceMax}</p>
                       <div className="relative" style={{ height: 4, marginBottom: 28 }}>
                         <div className="absolute inset-0 rounded-full bg-slate-200" />
@@ -612,7 +594,7 @@ export default function SearchPage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <button type="button" onClick={resetPriceFilter} className="h-9 rounded-full border border-slate-300 px-3 text-xs text-slate-700">Reset</button>
-                        <button type="button" onClick={() => setActivePanel(null)} className="h-10 rounded-full bg-[#003b1f] px-5 text-sm font-semibold text-white">Show results</button>
+                        <button type="button" onClick={() => setActivePanel(null)} className="h-10 rounded-full bg-[#003b1f] px-5 text-sm font-semibold text-white">{t("search_show_results")}</button>
                       </div>
                     </div>
                   ) : null}
@@ -635,7 +617,7 @@ export default function SearchPage() {
                     <div className="absolute top-full right-0 mt-2 z-50 w-[min(520px,95vw)] rounded-2xl border border-slate-200 bg-white shadow-lg p-4">
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div>
-                          <p className="text-xs font-semibold text-slate-600 mb-1.5">Category</p>
+                          <p className="text-xs font-semibold text-slate-600 mb-1.5">{t("search_category")}</p>
                           <select
                             value={draftFilters.category}
                             onChange={(e) => setDraftFilters((prev) => ({ ...prev, category: e.target.value }))}
@@ -654,7 +636,7 @@ export default function SearchPage() {
                           />
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-slate-600 mb-1.5">Language</p>
+                          <p className="text-xs font-semibold text-slate-600 mb-1.5">{t("search_language")}</p>
                           <select
                             value={draftFilters.languageFilter}
                             onChange={(e) => setDraftFilters((prev) => ({ ...prev, languageFilter: e.target.value }))}
@@ -664,18 +646,18 @@ export default function SearchPage() {
                           </select>
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-slate-600 mb-1.5">Time of Day</p>
+                          <p className="text-xs font-semibold text-slate-600 mb-1.5">{t("search_time")}</p>
                           <select
                             value={draftFilters.timeFilter}
                             onChange={(e) => setDraftFilters((prev) => ({ ...prev, timeFilter: e.target.value }))}
                             className="w-full h-10 rounded-lg border border-slate-300 px-3 text-sm text-slate-700 outline-none"
                           >
-                            <option value="All">Any time</option>
+                            <option value="All">{t("search_any_time")}</option>
                             {TIME_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                           </select>
                         </div>
                         <div className="sm:col-span-2">
-                          <p className="text-xs font-semibold text-slate-600 mb-1">Price</p>
+                          <p className="text-xs font-semibold text-slate-600 mb-1">{t("search_price")}</p>
                           <p className="text-xs font-medium mb-3" style={{ color: "#00AA6C" }}>${draftFilters.priceMin} – ${draftFilters.priceMax}</p>
                           <div className="relative" style={{ height: 4, marginBottom: 4 }}>
                             <div className="absolute inset-0 rounded-full bg-slate-200" />
@@ -723,9 +705,7 @@ export default function SearchPage() {
                             setActivePanel(null);
                           }}
                           className="h-10 rounded-full bg-[#003b1f] px-5 text-sm font-semibold text-white"
-                        >
-                          Show results
-                        </button>
+                        >{t("search_show_results")}</button>
                       </div>
                     </div>
                   ) : null}

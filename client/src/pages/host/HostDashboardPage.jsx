@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { getHostExperiences, deleteExperience } from '../../services/experienceService.js'
 import { cancelHostBooking, completeHostBooking, getAllHostBookings } from '../../services/bookingService.js'
 import { getHostReviews } from '../../services/reviewService.js'
+import useTranslation from '../../hooks/useTranslation.js';
 import toast from 'react-hot-toast'
 import Spinner from '../../components/common/Spinner.jsx'
 import { formatDate, formatPrice } from '../../utils/formatters.js'
@@ -102,8 +103,8 @@ const StatCard = ({ iconBg, icon: IconComp, label, value, sub, trendUp }) => (
       )}
     </div>
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">{label}</p>
-      <p className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{value}</p>
+      <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1">{label}</p>
+      <p className="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight">{value}</p>
       <p className="text-[11px] text-slate-400 font-medium mt-1 leading-snug">{sub}</p>
     </div>
   </div>
@@ -179,6 +180,7 @@ const PanelHeader = ({ icon: IconComp, title, count, action, actionTo }) => (
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 const HostDashboardPage = () => {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { user } = useSelector((s) => s.auth)
   const [deletingId, setDeletingId] = useState(null)
@@ -246,34 +248,34 @@ const HostDashboardPage = () => {
 
   const cancelMutation = useMutation({
     mutationFn: cancelHostBooking,
-    onSuccess: async () => { toast.success('Booking cancelled'); await refreshBookings() },
-    onError: (e) => toast.error(e?.response?.data?.message || 'Failed to cancel'),
+    onSuccess: async () => { toast.success(t('dashboard_cancelled')); await refreshBookings() },
+    onError: (e) => toast.error(e?.response?.data?.message || t('dashboard_failed_cancel')),
     onSettled: () => setBookingAction({ id: null, type: null }),
   })
 
   const completeMutation = useMutation({
     mutationFn: completeHostBooking,
-    onSuccess: async () => { toast.success('Marked as completed'); await refreshBookings() },
-    onError: (e) => toast.error(e?.response?.data?.message || 'Failed to complete'),
+    onSuccess: async () => { toast.success(t('dashboard_completed')); await refreshBookings() },
+    onError: (e) => toast.error(e?.response?.data?.message || t('dashboard_failed_complete')),
     onSettled: () => setBookingAction({ id: null, type: null }),
   })
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this experience? This cannot be undone.')) return
+    if (!window.confirm(t('dashboard_delete_confirm'))) return
     setDeletingId(id)
-    try { await deleteExperience(id); toast.success('Experience removed'); refetch() }
-    catch (e) { toast.error(e?.response?.data?.message || 'Failed to delete') }
+    try { await deleteExperience(id); toast.success(t('dashboard_removed')); refetch() }
+    catch (e) { toast.error(e?.response?.data?.message || t('dashboard_failed_delete')) }
     finally { setDeletingId(null) }
   }
 
   const handleCancel = (id) => {
-    if (!window.confirm('Cancel this booking?')) return
+    if (!window.confirm(t('dashboard_cancel_booking'))) return
     setBookingAction({ id, type: 'cancel' })
     cancelMutation.mutate(id)
   }
 
   const handleComplete = (id) => {
-    if (!window.confirm('Mark as completed?')) return
+    if (!window.confirm(t('dashboard_mark_complete'))) return
     setBookingAction({ id, type: 'complete' })
     completeMutation.mutate(id)
   }
@@ -289,7 +291,7 @@ const HostDashboardPage = () => {
       {/* ── Top bar ── */}
       <div className="flex flex-wrap items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
+          <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight leading-tight">
             Morning, {firstName}
           </h1>
           <p className="text-[13px] text-slate-400 font-medium mt-1.5 flex items-center gap-2">
@@ -360,7 +362,7 @@ const HostDashboardPage = () => {
             />
             <StatCard
               iconBg="#f5f3ff" icon={Icon.Calendar}
-              label="Bookings" value={bookings.length}
+              label={t("dashboard_bookings")} value={bookings.length}
               trendUp={pendingCount > 0 ? `${pendingCount} pending` : null}
               sub={`${bookings.filter(b => b.status === 'confirmed').length} upcoming`}
             />
@@ -508,10 +510,10 @@ const HostDashboardPage = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 mb-10">
             <ActionCard to="/host/experiences/create" iconBg="#f0fdfa" iconColor="#1a6b4a" icon={Icon.Plus}       label="Start Listing"    desc="Create activity" />
             <ActionCard to="/host/bookings"           iconBg="#eff6ff" iconColor="#2563eb" icon={Icon.Calendar}   label="All Bookings"     desc="Manage guests" />
-            <ActionCard to="/host/pathways"           iconBg="#fffbeb" iconColor="#d97706" icon={Icon.Map}        label="Pathways"         desc="Curated routes" />
+            <ActionCard to="/host/pathways"           iconBg="#fffbeb" iconColor="#d97706" icon={Icon.Map}        label={t("nav_pathways")}         desc="Create and manage pathways" />
             <ActionCard to="/host/experiences"        iconBg="#fff1f2" iconColor="#e11d48" icon={Icon.Experience} label="Experience List"  desc="Update listings" />
             <ActionCard to="/host/reviews"            iconBg="#f0fdf4" iconColor="#059669" icon={() => <Icon.Star filled />} label="Guest Reviews" desc="Read feedback" />
-            <ActionCard to="/profile"                 iconBg="#f8fafc" iconColor="#64748b" icon={Icon.Settings}   label="Settings"         desc="Host profile" />
+            <ActionCard to="/host/profile"            iconBg="#f8fafc" iconColor="#64748b" icon={Icon.Settings}   label="Settings"         desc="Host profile" />
           </div>
 
           {/* ── Recent reviews ── */}

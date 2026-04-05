@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
@@ -30,6 +31,8 @@ const statusVariant = {
 const STATUS_TABS = ['all', 'upcoming', 'confirmed', 'pending_payment', 'partially_paid', 'completed', 'cancelled']
 
 const HostBookingsPage = () => {
+  const { t } = useTranslation();
+
   const queryClient = useQueryClient()
 
   const [tab, setTab] = useState('all')
@@ -120,9 +123,7 @@ const HostBookingsPage = () => {
             <Link to="/host/dashboard" className="text-xs text-emerald-600">
               ← Dashboard
             </Link>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
-              Bookings
-            </h1>
+            <h1 className="text-lg sm:text-xl font-semibold text-slate-900 mt-1">{t("dashboard_bookings")}</h1>
           </div>
 
           {(counts.pending_payment > 0 || counts.partially_paid > 0) && (
@@ -266,7 +267,7 @@ const HostBookingsPage = () => {
                           defaultValue=""
                         >
                           <option value="" disabled>Set</option>
-                          <option value="confirmed">Confirmed</option>
+                          <option value="confirmed">{t("checkout_confirmed")}</option>
                           <option value="completed">Completed</option>
                           <option value="cancelled">Cancelled</option>
                         </select>

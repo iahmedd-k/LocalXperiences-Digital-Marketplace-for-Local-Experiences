@@ -7,6 +7,7 @@ import {
   CircleX, Clock3, Heart, MapPin, Share2, ShieldCheck, Users, WalletCards,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import useTranslation from '../../hooks/useTranslation.js';
 import api from '../../config/api.js'
 
 import { getExperienceById, getExperiences } from '../../services/experienceService.js'
@@ -182,26 +183,27 @@ const isTodaySlot = (dateValue) => {
 /* ─── CheckInButton ──────────────────────────────────────────── */
 
 const CheckInButton = ({ bookingId, isAuthenticated }) => {
+  const { t } = useTranslation()
   const [status, setStatus] = useState('idle') // idle | loading | success | error
   const [message, setMessage] = useState('')
 
   const handleCheckIn = async () => {
-    if (!isAuthenticated) { toast.error('Sign in to check in'); return }
-    if (!bookingId) { toast.error('No eligible booking found for check-in'); return }
+    if (!isAuthenticated) { toast.error(t('exp_sign_in_checkin')); return }
+    if (!bookingId) { toast.error(t('exp_no_booking_checkin')); return }
     setStatus('loading')
     try {
       const { data } = await checkInBooking(bookingId)
-      if (!data?.success) { setStatus('error'); setMessage(data?.message || 'Check-in failed'); toast.error(data?.message || 'Check-in failed'); return }
+      if (!data?.success) { setStatus('error'); setMessage(data?.message || t('exp_checkin_failed')); toast.error(data?.message || t('exp_checkin_failed')); return }
       setStatus('success')
-      setMessage(`Checked in! Total: ${data.data.checkInCount}`)
-      toast.success(`🎉 Check-in #${data.data.checkInCount} recorded!`)
+      setMessage(`${t('exp_checked_in')} ${data.data.checkInCount}`)
+      toast.success(`🎉 ${t('exp_checked_in')} #${data.data.checkInCount}!`)
       if (data.data.newBadge) {
-        setTimeout(() => toast.success(`🏆 New badge unlocked: ${data.data.newBadge}!`, { duration: 5000 }), 1000)
+        setTimeout(() => toast.success(`🏆 ${t('exp_checkin_badge')} ${data.data.newBadge}!`, { duration: 5000 }), 1000)
       }
     } catch (err) {
       setStatus('error')
-      setMessage('Check-in failed. Try again.')
-      toast.error('Check-in failed')
+      setMessage(t('exp_checkin_failed'))
+      toast.error(t('exp_checkin_failed'))
     }
   }
 
@@ -239,6 +241,7 @@ const ReserveCard = ({
   setShowCancellationModal, setShowReserveLaterModal,
   refreshAvailability, isRefreshingAvailability, openAvailabilitySignal,
 }) => {
+  const { t } = useTranslation()
   const { currency } = useCurrency()
   const navigate = useNavigate()
 
@@ -663,9 +666,7 @@ const ReserveCard = ({
                       <div className="flex items-center gap-1.5 cursor-pointer text-xs text-violet-700">
                         <input type="checkbox" checked={isGroupBooking}
                           onChange={(e) => setIsGroupBooking(e.target.checked)}
-                          className="h-3.5 w-3.5 rounded border-slate-300 text-violet-600" />
-                        Group booking
-                      </div>
+                          className="h-3.5 w-3.5 rounded border-slate-300 text-violet-600" />{t("checkout_group_booking")}</div>
                     </div>
 
                     {isGroupBooking ? (
@@ -739,6 +740,7 @@ const ReserveCard = ({
 /* ─── Main Page ──────────────────────────────────────────────────── */
 
 const ExperienceDetailPage = () => {
+  const { t } = useTranslation()
   const { id }         = useParams()
   const navigate       = useNavigate()
   const location       = useLocation()
@@ -1323,9 +1325,9 @@ const ExperienceDetailPage = () => {
       <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
         {/* Breadcrumb */}
         <nav className="mb-3 flex items-center gap-1.5 text-[11px] text-slate-400">
-          <Link to="/" className="hover:text-emerald-600">Home</Link>
+          <Link to="/" className="hover:text-emerald-600">{t("nav_home")}</Link>
           <span>/</span>
-          <Link to="/search" className="hover:text-emerald-600">Experiences</Link>
+          <Link to="/search" className="hover:text-emerald-600">{t("dashboard_experiences")}</Link>
           <span>/</span>
           <span className="max-w-xs truncate text-slate-600">{resolvedTitle}</span>
         </nav>
@@ -1357,18 +1359,18 @@ const ExperienceDetailPage = () => {
 
             <span className="inline-flex shrink-0 items-center gap-1 text-xs text-slate-500 whitespace-nowrap">
               <Users className="h-3.5 w-3.5 text-emerald-600" />
-              Up to {exp.groupSize?.max || 10}
+              {t('exp_up_to')} {exp.groupSize?.max || 10}
             </span>
 
             <div className="ml-auto inline-flex shrink-0 items-center gap-1.5">
               <button type="button" onClick={handleShare}
                 className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-1 text-[11px] text-slate-600 transition hover:border-emerald-300 hover:text-emerald-700">
-                <Share2 className="h-3 w-3" /> Share
+                <Share2 className="h-3 w-3" /> {t('exp_share')}
               </button>
               <button type="button" onClick={handleSaveExperience} disabled={isPendingFor(id)}
                 className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] transition ${isSaved(id) ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-700'} disabled:opacity-60`}>
                 <Heart className={`h-3 w-3 ${isSaved(id) ? 'fill-current' : ''}`} />
-                {isSaved(id) ? 'Saved' : 'Save'}
+                {isSaved(id) ? t('exp_saved') : t('exp_save')}
               </button>
             </div>
           </div>
@@ -1418,7 +1420,7 @@ const ExperienceDetailPage = () => {
             />
 
             {/* Details */}
-            <DetailSection id="details" eyebrow="Details" title="Trip details">
+            <DetailSection id="details" eyebrow={t("exp_details")} title={t('exp_trip_details')}>
               {detailFaqItems.length > 0 && (
                 <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                   {detailFaqItems.map((item, index) => {
@@ -1440,7 +1442,7 @@ const ExperienceDetailPage = () => {
 
               {exp.tags?.length > 0 && (
                 <div className="mt-4 border-t border-slate-100 pt-4">
-                  <h3 className="text-xs font-medium text-slate-800 mb-2">Tags</h3>
+                  <h3 className="text-xs font-medium text-slate-800 mb-2">{t('exp_tags')}</h3>
                   <div className="flex flex-wrap gap-1.5">
                     {exp.tags.map((tag) => <Badge key={tag} variant="gray">#{tag}</Badge>)}
                   </div>
@@ -1489,7 +1491,7 @@ const ExperienceDetailPage = () => {
             </DetailSection>
 
             <ItinerarySection
-              title={hasHostItinerary ? 'Experience itinerary' : 'How the experience flows'}
+              title={hasHostItinerary ? t('exp_experience_itinerary') : t('exp_experience_flows')}
               steps={itinerarySteps}
               center={itineraryCenter}
               markers={itineraryMarkers}
@@ -1499,40 +1501,40 @@ const ExperienceDetailPage = () => {
             />
 
             {/* Operator */}
-            <DetailSection id="operator" eyebrow="Operator" title="About the operator">
+            <DetailSection id="operator" eyebrow={t("exp_operator")} title={t('exp_about_operator')}>
               <div className="grid gap-3 lg:grid-cols-[240px_minmax(0,1fr)]">
                 <article className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                   <div className="h-28 overflow-hidden bg-slate-100">
-                    <img src={exp.photos?.[0] || host.profilePic} alt={host.name || 'Operator'} className="h-full w-full object-cover" />
+                    <img src={exp.photos?.[0] || host.profilePic} alt={host.name || t('exp_operator')} className="h-full w-full object-cover" />
                   </div>
                   <div className="p-3">
-                    <p className="text-xs font-medium text-slate-900">{host.name || 'Professional Trip Services'}</p>
+                    <p className="text-xs font-medium text-slate-900">{host.name || t('exp_operator')}</p>
                     <div className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-600">
-                      <span className="font-medium">{rating > 0 ? rating.toFixed(1) : 'New'}</span>
+                      <span className="font-medium">{rating > 0 ? rating.toFixed(1) : t('exp_new')}</span>
                       {rating > 0 && <Stars value={rating} />}
                       {ratingCount > 0 && <span className="text-slate-400">({ratingCount.toLocaleString()})</span>}
                     </div>
-                    <p className="mt-1 text-xs text-slate-500">{exp.location?.city || 'Destination details shared after booking'}</p>
-                    {operatorJoinedLabel && <p className="mt-0.5 text-[11px] text-slate-400">Joined {operatorJoinedLabel}</p>}
-                    {host.languages?.length > 0 && <p className="mt-0.5 text-[11px] text-slate-400">Speaks {host.languages.join(', ')}</p>}
+                    <p className="mt-1 text-xs text-slate-500">{exp.location?.city || t('exp_destination_details')}</p>
+                    {operatorJoinedLabel && <p className="mt-0.5 text-[11px] text-slate-400">{t('exp_joined')} {operatorJoinedLabel}</p>}
+                    {host.languages?.length > 0 && <p className="mt-0.5 text-[11px] text-slate-400">{t('exp_speaks')} {host.languages.join(', ')}</p>}
                   </div>
                 </article>
 
                 <div className="rounded-xl border border-slate-200 bg-white p-3">
-                  <h3 className="text-xs font-medium text-slate-800 mb-2">Operator details</h3>
+                  <h3 className="text-xs font-medium text-slate-800 mb-2">{t('exp_operator_details')}</h3>
                   <div className="space-y-2 text-xs text-slate-600 leading-5">
                     {host.bio && <p>{host.bio}</p>}
-                    {exp.storytellingProfile?.localConnection && <p>Local connection: {exp.storytellingProfile.localConnection}</p>}
-                    <p>{host.name || 'This operator'} leads experiences in {exp.location?.city || 'this destination'} and can help with planning, meeting details, and trip questions.</p>
+                    {exp.storytellingProfile?.localConnection && <p>{t('exp_local_connection')} {exp.storytellingProfile.localConnection}</p>}
+                    <p>{host.name || t('exp_operator_default')} {t('exp_operator_leads_city')} {exp.location?.city || t('exp_destination_details')} {t('exp_operator_leads_suffix')}</p>
                   </div>
                   {ratingCount > 0 && (
                     <div className="mt-3">
-                      <a href="#reviews" className="text-xs text-emerald-700 underline underline-offset-2">See guest reviews</a>
+                      <a href="#reviews" className="text-xs text-emerald-700 underline underline-offset-2">{t('exp_see_guest_reviews')}</a>
                     </div>
                   )}
                   {host?._id && (
                     <div className="mt-2">
-                      <Link to={`/hosts/${host._id}`} className="text-xs text-slate-600 underline underline-offset-2">View host details, stories, and reviews</Link>
+                      <Link to={`/hosts/${host._id}`} className="text-xs text-slate-600 underline underline-offset-2">{t('exp_view_host_details')}</Link>
                     </div>
                   )}
                 </div>
@@ -1643,10 +1645,10 @@ const ExperienceDetailPage = () => {
         <section className="mt-6 border-t border-slate-200 pt-5">
           <div className="mb-3 flex items-end justify-between gap-3">
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-widest text-emerald-600">More to explore</p>
-              <h2 className="text-base font-semibold text-slate-900">Similar experiences</h2>
+              <p className="text-[10px] font-medium uppercase tracking-widest text-emerald-600">{t('exp_more_to_explore')}</p>
+              <h2 className="text-base font-semibold text-slate-900">{t('exp_similar_experiences')}</h2>
             </div>
-            <Link to="/search" className="text-xs text-emerald-600 hover:underline">View all</Link>
+            <Link to="/search" className="text-xs text-emerald-600 hover:underline">{t("test_view_all")}</Link>
           </div>
 
           {similarCards.length > 0 ? (
@@ -1678,7 +1680,7 @@ const ExperienceDetailPage = () => {
             </div>
           ) : (
             <p className="rounded-xl border border-dashed border-slate-200 px-4 py-5 text-center text-xs text-slate-400">
-              Similar experiences will appear here soon.
+              {t('exp_similar_empty')}
             </p>
           )}
         </section>
@@ -1688,10 +1690,10 @@ const ExperienceDetailPage = () => {
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white/95 px-5 py-3 backdrop-blur-md lg:hidden">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total Price</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t('exp_total_price')}</p>
             <div className="flex items-baseline gap-1">
               <span className="text-xl font-bold text-slate-900">{formatPrice(exp?.price || 0, currency?.code)}</span>
-              <span className="text-[10px] text-slate-400">/ person</span>
+              <span className="text-[10px] text-slate-400">{t('exp_per_person')}</span>
             </div>
             {Number(exp?.rating?.average || 0) > 0 && (
               <div className="flex items-center gap-1">
@@ -1705,7 +1707,7 @@ const ExperienceDetailPage = () => {
             onClick={handleMobileAvailabilityOpen}
             className="flex-1 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition active:scale-95 hover:bg-emerald-700"
           >
-            Check availability
+            {t('exp_check_availability')}
           </button>
         </div>
       </div>

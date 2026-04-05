@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -12,6 +13,8 @@ import { formatPrice } from '../../utils/formatters.js'
 const FILTERS = ['all', 'active', 'inactive']
 
 const HostExperiencesPage = () => {
+  const { t } = useTranslation();
+
   const queryClient = useQueryClient()
 
   const [filter, setFilter] = useState('all')
@@ -76,7 +79,7 @@ const HostExperiencesPage = () => {
             <Link to="/host/dashboard" className="text-xs text-emerald-600">
               ← Dashboard
             </Link>
-            <h1 className="text-xl sm:text-2xl font-bold mt-1 text-slate-900">Manage Listings</h1>
+            <h1 className="text-lg sm:text-xl font-semibold mt-1 text-slate-900">Manage Listings</h1>
             <p className="text-xs text-slate-500">Your hosted experiences</p>
           </div>
 
@@ -131,8 +134,7 @@ const HostExperiencesPage = () => {
                   to="/host/experiences/create"
                   className="inline-flex items-center gap-2 bg-emerald-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl no-underline"
                 >
-                  <Plus size={16} /> Create experience
-                </Link>
+                  <Plus size={16} />{t("nav_create_experience")}</Link>
               }
             />
           </div>

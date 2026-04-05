@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate }   from 'react-router-dom'
 import { useSelector }         from 'react-redux'
@@ -85,6 +86,8 @@ const getSuggestedLocation = (feature, fallbackCountry) => ({
 })
 
 const CreateExperiencePage = () => {
+  const { t } = useTranslation();
+
   const navigate = useNavigate()
   const { user } = useSelector((s) => s.auth)
   const [step,    setStep]    = useState(0)
@@ -454,7 +457,7 @@ const CreateExperiencePage = () => {
       <div className="max-w-2xl mx-auto w-full px-4 py-6">
         <div className="mb-6">
           <Link to="/host/dashboard" className="text-xs text-emerald-600 hover:underline">← Dashboard</Link>
-          <h1 className="font-clash text-xl font-bold text-gray-900 mt-1">Create New Experience</h1>
+          <h1 className="text-lg font-semibold text-gray-900 mt-1">Create New Experience</h1>
         </div>
 
         {/* Step progress */}
@@ -479,7 +482,7 @@ const CreateExperiencePage = () => {
           {/* Step 0 — Basic Info */}
           {step === 0 && (
             <div className="flex flex-col gap-3">
-              <h2 className="font-clash text-lg font-bold text-gray-900">Basic Information</h2>
+              <h2 className="text-base font-semibold text-gray-900">Basic Information</h2>
               <Input label="Experience Title *" error={errors.title} value={form.title} maxLength={MAX_TITLE_LENGTH} onChange={(e) => set('title', e.target.value)}
                 placeholder="e.g. Old City Food Walking Tour" />
               <p className="-mt-2 text-right text-xs text-slate-400">{form.title.length}/{MAX_TITLE_LENGTH}</p>
@@ -511,7 +514,7 @@ const CreateExperiencePage = () => {
           {/* Step 1 — Details */}
           {step === 1 && (
             <div className="flex flex-col gap-3">
-              <h2 className="font-clash text-lg font-bold text-gray-900">Experience Details</h2>
+              <h2 className="text-base font-semibold text-gray-900">Experience Details</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input label="Price (USD) *" error={errors.price} type="number" value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="25" />
                 <Input label="Duration (minutes) *" error={errors.duration} type="number" value={form.duration} onChange={(e) => set('duration', e.target.value)} placeholder="120" />
@@ -547,7 +550,7 @@ const CreateExperiencePage = () => {
                 <p className="text-xs text-slate-400">{notIncludedCount}/{MAX_NOT_INCLUDED} not included items used.</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-                <h3 className="font-clash text-lg font-bold text-slate-900">Optional detail sections</h3>
+                <h3 className="text-base font-semibold text-slate-900">Optional detail sections</h3>
                 <p className="mt-1 text-sm text-slate-500">These fields show on the experience page if you fill them in. Leave any box empty and it simply will not show.</p>
                 <div className="mt-4 grid gap-4">
                   {DETAIL_SECTION_FIELDS.map((field) => (
@@ -569,7 +572,7 @@ const CreateExperiencePage = () => {
               </div>
 
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
-                <h3 className="font-clash text-lg font-bold text-slate-900">Booking rules</h3>
+                <h3 className="text-base font-semibold text-slate-900">Booking rules</h3>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <Input label="Minimum advance hours" type="number" value={form.bookingSettings.minAdvanceHours} onChange={(e) => setBookingSetting('minAdvanceHours', Number(e.target.value) || 0)} />
                   <Input label="Maximum advance days" type="number" value={form.bookingSettings.maxAdvanceDays} onChange={(e) => setBookingSetting('maxAdvanceDays', Number(e.target.value) || 1)} />
@@ -637,7 +640,7 @@ const CreateExperiencePage = () => {
           {step === 2 && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
-                <h2 className="font-clash text-lg font-bold text-gray-900">Meeting Point</h2>
+              <h2 className="text-base font-semibold text-gray-900">Meeting Point</h2>
                 <div className="h-px flex-1 bg-gray-100" />
               </div>
               
@@ -717,7 +720,7 @@ const CreateExperiencePage = () => {
           {/* Step 3 — Availability */}
           {step === 3 && (
             <div className="flex flex-col gap-4">
-              <h2 className="font-clash text-lg font-bold text-gray-900">Experience Availability</h2>
+              <h2 className="text-base font-semibold text-gray-900">Experience Availability</h2>
               <p className="text-sm text-gray-500">Add dates and times when you can host this experience. {form.availability.length}/{MAX_AVAILABILITY_SLOTS} slots used.</p>
               
               <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
@@ -772,7 +775,7 @@ const CreateExperiencePage = () => {
           {/* Step 4 — Itinerary */}
           {step === 4 && (
             <div className="flex flex-col gap-4">
-              <h2 className="font-clash text-xl font-bold text-gray-900">Itinerary</h2>
+              <h2 className="text-base font-semibold text-gray-900">{t("exp_itinerary")}</h2>
               <p className="text-sm text-gray-500">
                 This step is optional. Add a traveler-facing timeline only if the experience has multiple moments or stops. {form.itinerary.length}/{MAX_ITINERARY_STEPS} steps used.
               </p>
@@ -865,7 +868,7 @@ const CreateExperiencePage = () => {
 
               {false && (
               <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-4">
-                <h3 className="font-clash text-lg font-bold text-slate-900">Suggested journey pathways</h3>
+                <h3 className="text-base font-semibold text-slate-900">Suggested journey pathways</h3>
                 <p className="mt-1 text-sm text-slate-500">Recommend multi-experience routes guests can use to build a bigger day around this booking.</p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <Input label="Journey title" value={pathwayDraft.title} onChange={(e) => setPathwayDraft((prev) => ({ ...prev, title: e.target.value }))} placeholder="Old City Morning Circuit" />
@@ -883,9 +886,9 @@ const CreateExperiencePage = () => {
                   <div className="flex flex-col gap-1">
                     <label className="text-sm font-semibold text-gray-700">Best time of day</label>
                     <select value={pathwayDraft.idealTime} onChange={(e) => setPathwayDraft((prev) => ({ ...prev, idealTime: e.target.value }))} className="border rounded-lg px-4 py-3 text-sm outline-none focus:border-emerald-400 border-gray-200">
-                      <option value="morning">Morning</option>
-                      <option value="afternoon">Afternoon</option>
-                      <option value="evening">Evening</option>
+                      <option value="morning">{t("search_morning")}</option>
+                      <option value="afternoon">{t("search_afternoon")}</option>
+                      <option value="evening">{t("search_evening")}</option>
                       <option value="anytime">Anytime</option>
                     </select>
                   </div>
@@ -924,7 +927,7 @@ const CreateExperiencePage = () => {
           {/* Step 5 — Photos */}
           {step === 5 && (
             <div className="flex flex-col gap-4">
-              <h2 className="font-clash text-xl font-bold text-gray-900">Photos</h2>
+              <h2 className="text-base font-semibold text-gray-900">Photos</h2>
               <p className="text-sm text-gray-500">Upload between {MIN_IMAGES} and {MAX_IMAGES} images. The first uploaded image will be used as the thumbnail. {photoFiles.length}/{MAX_IMAGES} selected.</p>
               {errors.photos ? <p className="text-xs text-rose-600">{errors.photos}</p> : null}
               <div className="flex flex-col gap-1">

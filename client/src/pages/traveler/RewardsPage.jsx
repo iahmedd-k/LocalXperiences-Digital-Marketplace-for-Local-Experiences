@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { useQuery } from '@tanstack/react-query'
 import { useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
@@ -31,6 +32,8 @@ const HOW_TO = [
 
 /* ─── component ────────────────────────────────────────── */
 const RewardsPage = () => {
+  const { t } = useTranslation();
+
   const { user } = useSelector((s) => s.auth)
 
   const { data: configRaw, isLoading } = useQuery({
@@ -274,8 +277,7 @@ const RewardsPage = () => {
             className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400
                        text-stone-900 text-sm font-bold px-6 py-3 rounded-xl transition-colors
                        no-underline whitespace-nowrap shrink-0"
-          >
-            Start Exploring <ArrowRight className="w-4 h-4" />
+          >{t("hiw_cta")}<ArrowRight className="w-4 h-4" />
           </Link>
         </section>
       </main>

@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { useState } from "react";
 import { Compass, Home } from "lucide-react";
 import { useDispatch } from "react-redux";
@@ -119,6 +120,7 @@ function Divider() {
 
 /* ── Login ── */
 function LoginForm({ onSwitch, onLogin, onGoogle }) {
+  const { t } = useTranslation();
   const [email, setEmail]   = useState("");
   const [pw, setPw]         = useState("");
   const [show, setShow]     = useState(false);
@@ -206,7 +208,7 @@ function LoginForm({ onSwitch, onLogin, onGoogle }) {
         By continuing, you agree to our{" "}
         <a href="#" className="font-semibold no-underline hover:underline" style={{ color: BRAND }}>Terms</a>
         {" "}&amp;{" "}
-        <a href="#" className="font-semibold no-underline hover:underline" style={{ color: BRAND }}>Privacy Policy</a>
+        <a href="#" className="font-semibold no-underline hover:underline" style={{ color: BRAND }}>{t("footer_privacy")}</a>
       </p>
     </div>
   );
@@ -214,6 +216,7 @@ function LoginForm({ onSwitch, onLogin, onGoogle }) {
 
 /* ── Signup ── */
 function SignupForm({ onSwitch, onSignup, onGoogle }) {
+  const { t } = useTranslation();
   const [role, setRole]     = useState("traveler");
   const [name, setName]     = useState("");
   const [email, setEmail]   = useState("");
@@ -318,7 +321,7 @@ function SignupForm({ onSwitch, onSignup, onGoogle }) {
           I agree to the{" "}
           <a href="#" className="font-semibold no-underline hover:underline" style={{ color: BRAND }}>Terms of Service</a>
           {" "}and{" "}
-          <a href="#" className="font-semibold no-underline hover:underline" style={{ color: BRAND }}>Privacy Policy</a>
+          <a href="#" className="font-semibold no-underline hover:underline" style={{ color: BRAND }}>{t("footer_privacy")}</a>
         </span>
       </label>
 
@@ -356,7 +359,10 @@ function SignupForm({ onSwitch, onSignup, onGoogle }) {
 }
 
 /* ── Root ── */
-export default function AuthPage({ defaultMode = "login" }) {
+export default function AuthPage({
+  defaultMode = "login",
+}) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState(defaultMode);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -443,8 +449,7 @@ export default function AuthPage({ defaultMode = "login" }) {
           <div style={{ width: 36, height: 36, borderRadius: 10, background: "#f0fdf9", border: "1.5px solid rgba(0,170,108,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <img src="/logo-localx.svg" alt="LocalXperiences logo" style={{ width: 24, height: 24, objectFit: "contain" }} />
           </div>
-          <span style={{ fontWeight: 800, fontSize: "1rem", color: "#0f172a", letterSpacing: "-0.02em", fontFamily: "'DM Sans', sans-serif" }}>
-            Local<span style={{ color: BRAND }}>Xperiences</span>
+          <span style={{ fontWeight: 800, fontSize: "1rem", color: "#0f172a", letterSpacing: "-0.02em", fontFamily: "'DM Sans', sans-serif" }}>{t("hero_headline_local")}<span style={{ color: BRAND }}>Xperiences</span>
           </span>
         </a>
 

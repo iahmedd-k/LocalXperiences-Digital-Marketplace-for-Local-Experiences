@@ -1,5 +1,6 @@
 const Story = require('../models/Story');
 const { successResponse, errorResponse, paginatedResponse } = require('../utils/apiResponse');
+const { translateText } = require('../services/translationService');
 
 const slugify = (value = '') => String(value)
   .toLowerCase()
@@ -65,18 +66,132 @@ const normalizeSections = (rawSections, uploadedImages = []) => {
     .slice(0, 12);
 };
 
+const DEFAULT_LANGUAGE = 'en';
+
+const normalizeRequestedLanguage = (value = DEFAULT_LANGUAGE) => {
+  const normalized = String(value || DEFAULT_LANGUAGE).split(',')[0].trim().toLowerCase();
+  return normalized || DEFAULT_LANGUAGE;
+};
+
+const getLanguageCandidates = (value = DEFAULT_LANGUAGE) => {
+  const normalized = normalizeRequestedLanguage(value);
+  const base = normalized.split('-')[0];
+  return [...new Set([normalized, base].filter(Boolean))];
+};
+
+const isEnglishLanguage = (value = DEFAULT_LANGUAGE) => getLanguageCandidates(value).includes(DEFAULT_LANGUAGE);
+
+const findStoredStoryTranslation = (translations = [], requestedLanguage = DEFAULT_LANGUAGE) => {
+  if (!Array.isArray(translations) || !translations.length) return null;
+
+  const candidates = getLanguageCandidates(requestedLanguage);
+  return translations.find((item) => candidates.includes(String(item?.languageCode || '').trim().toLowerCase())) || null;
+};
+
+const applyStoryTranslation = (story, translation) => {
+  if (!translation) return story;
+
+  const translatedSections = Array.isArray(story?.sections)
+    ? story.sections.map((section, index) => {
+        const translatedSection = translation.sections?.[index];
+        if (!translatedSection) return section;
+
+        return {
+          ...section,
+          heading: translatedSection.heading || section.heading,
+          body: translatedSection.body || section.body,
+          imageCaption: translatedSection.imageCaption || section.imageCaption,
+        };
+      })
+    : [];
+
+  return {
+    ...story,
+    title: translation.title || story.title,
+    excerpt: translation.excerpt || story.excerpt,
+    coverImageAlt: translation.coverImageAlt || story.coverImageAlt,
+    category: translation.category || story.category,
+    locationLabel: translation.locationLabel || story.locationLabel,
+    sections: translatedSections,
+  };
+};
+
+const persistStoryTranslation = async (storyDoc, requestedLanguage, translatedFields) => {
+  if (!storyDoc?.save || !translatedFields || Object.keys(translatedFields).length === 0) return;
+
+  const candidates = getLanguageCandidates(requestedLanguage);
+  const primaryLanguage = candidates[0];
+  if (!primaryLanguage || primaryLanguage === DEFAULT_LANGUAGE) return;
+
+  const existingIndex = Array.isArray(storyDoc.translations)
+    ? storyDoc.translations.findIndex((item) => candidates.includes(String(item?.languageCode || '').trim().toLowerCase()))
+    : -1;
+
+  const payload = {
+    languageCode: primaryLanguage,
+    languageLabel: primaryLanguage.toUpperCase(),
+    ...translatedFields,
+  };
+
+  try {
+    if (existingIndex >= 0) {
+      Object.assign(storyDoc.translations[existingIndex], payload);
+    } else {
+      storyDoc.translations.push(payload);
+    }
+
+    await storyDoc.save();
+  } catch (error) {
+    console.error('Failed to persist story translation:', error?.message || error);
+  }
+};
+
+const resolveStoryForLanguage = async (storyDoc, requestedLanguage = DEFAULT_LANGUAGE, { persistMissing = true } = {}) => {
+  const story = storyDoc?.toObject ? storyDoc.toObject() : { ...storyDoc };
+  if (isEnglishLanguage(requestedLanguage)) return story;
+
+  const storedTranslation = findStoredStoryTranslation(story.translations, requestedLanguage);
+  if (storedTranslation) return applyStoryTranslation(story, storedTranslation);
+
+  const targetLanguage = getLanguageCandidates(requestedLanguage)[0];
+  const translatedSections = await Promise.all(
+    (story.sections || []).map(async (section) => ({
+      heading: section?.heading ? await translateText(section.heading, targetLanguage) : '',
+      body: section?.body ? await translateText(section.body, targetLanguage) : '',
+      imageCaption: section?.imageCaption ? await translateText(section.imageCaption, targetLanguage) : '',
+    }))
+  );
+
+  const translatedFields = {
+    title: story.title ? await translateText(story.title, targetLanguage) : '',
+    excerpt: story.excerpt ? await translateText(story.excerpt, targetLanguage) : '',
+    coverImageAlt: story.coverImageAlt ? await translateText(story.coverImageAlt, targetLanguage) : '',
+    category: story.category ? await translateText(story.category, targetLanguage) : '',
+    locationLabel: story.locationLabel ? await translateText(story.locationLabel, targetLanguage) : '',
+    sections: translatedSections,
+  };
+
+  if (persistMissing) {
+    await persistStoryTranslation(storyDoc, targetLanguage, translatedFields);
+  }
+
+  return applyStoryTranslation(story, translatedFields);
+};
+
 const getStories = async (req, res, next) => {
   try {
     const { page = 1, limit = 12 } = req.query;
+    const requestedLanguage = normalizeRequestedLanguage(req.query.lang || req.headers['accept-language']);
     const skip = (Number(page) - 1) * Number(limit);
     const filter = { isPublished: true };
     const total = await Story.countDocuments(filter);
 
-    const stories = await Story.find(filter)
+    const storyDocs = await Story.find(filter)
       .populate('hostId', 'name profilePic bio')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit));
+    const stories = await Promise.all(storyDocs.map((story) => resolveStoryForLanguage(story, requestedLanguage)));
 
     return paginatedResponse(res, 'Stories fetched', stories, {
       total,
@@ -91,10 +206,13 @@ const getStories = async (req, res, next) => {
 
 const getStoryBySlug = async (req, res, next) => {
   try {
-    const story = await Story.findOne({ slug: req.params.slug, isPublished: true })
+    const requestedLanguage = normalizeRequestedLanguage(req.query.lang || req.headers['accept-language']);
+    const storyDoc = await Story.findOne({ slug: req.params.slug, isPublished: true })
       .populate('hostId', 'name profilePic bio languages');
 
-    if (!story) return errorResponse(res, 404, 'Story not found');
+    if (!storyDoc) return errorResponse(res, 404, 'Story not found');
+
+    const story = await resolveStoryForLanguage(storyDoc, requestedLanguage);
     return successResponse(res, 200, 'Story fetched', story);
   } catch (error) {
     next(error);

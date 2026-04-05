@@ -42,6 +42,7 @@ import HostBookingsPage     from '../pages/host/HostBookingsPage.jsx'
 import HostReviewsPage      from '../pages/host/HostReviewsPage.jsx'
 import HostExperiencesPage  from '../pages/host/HostExperiencesPage.jsx'
 import HostWalletPage       from '../pages/host/HostWalletPage.jsx'
+import HostProfileSetupPage from '../pages/host/HostProfileSetupPage.jsx'
 import HostLayout           from '../layouts/HostLayout.jsx'
 
 // Pages — pathways
@@ -85,7 +86,7 @@ const AppRouter = () => (
         <Route element={<HostLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard"          element={<HostDashboardPage />} />
-          <Route path="pathways"           element={<PathwayManagementPage />} />
+          <Route path="pathways"            element={<PathwayManagementPage />} />
           <Route path="pathways/create"    element={<CreatePathwayPage />} />
           <Route path="experiences"        element={<HostExperiencesPage />} />
           <Route path="experiences/create" element={<CreateExperiencePage />} />
@@ -94,7 +95,7 @@ const AppRouter = () => (
           <Route path="bookings"           element={<HostBookingsPage />} />
           <Route path="wallet"             element={<HostWalletPage />} />
           <Route path="reviews"            element={<HostReviewsPage />} />
-          <Route path="profile"            element={<ProfilePage hideLayout={true} />} />
+          <Route path="profile"            element={<HostProfileSetupPage />} />
         </Route>
       </Route>
 

@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import useTranslation from '../../hooks/useTranslation.js';
 import Navbar from '../../components/Navbar.jsx'
 import Footer from '../../components/Footer.jsx'
 import Spinner from '../../components/common/Spinner.jsx'
@@ -13,6 +14,7 @@ const SECTION_LAYOUTS = {
 }
 
 export default function StoryDetailPage() {
+  const { t } = useTranslation()
   const { slug } = useParams()
 
   const { data: story, isLoading } = useQuery({
@@ -31,8 +33,8 @@ export default function StoryDetailPage() {
         <Navbar />
         <div className="mx-auto flex w-full max-w-4xl flex-1 items-center justify-center px-4 py-20">
           <div className="rounded-[28px] border border-slate-200 bg-white p-10 text-center">
-            <h1 className="font-clash text-3xl font-bold text-[#0f2d1a]">Story not found</h1>
-            <Link to="/stories" className="mt-4 inline-flex rounded-full bg-[#003b1f] px-5 py-3 text-sm font-semibold text-white no-underline">Back to stories</Link>
+            <h1 className="font-clash text-3xl font-bold text-[#0f2d1a]">{t('story_not_found')}</h1>
+            <Link to="/stories" className="mt-4 inline-flex rounded-full bg-[#003b1f] px-5 py-3 text-sm font-semibold text-white no-underline">{t('story_back')}</Link>
           </div>
         </div>
         <Footer />
@@ -50,7 +52,7 @@ export default function StoryDetailPage() {
               <img src={story.coverImage} alt={story.coverImageAlt || story.title} className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f2d1a]/80 via-[#0f2d1a]/30 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-10">
-                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#34E0A1]">{story.category || 'Local Story'}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#34E0A1]">{story.category || t('story_local_story')}</p>
                 <h1 className="mt-3 max-w-4xl font-clash text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">{story.title}</h1>
                 <p className="mt-4 max-w-2xl text-base leading-8 text-white/84 sm:text-lg">{story.excerpt}</p>
               </div>
@@ -61,8 +63,8 @@ export default function StoryDetailPage() {
                 <div className="flex items-center gap-3">
                   <Avatar name={story.hostId?.name} src={story.hostId?.profilePic} size="md" />
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{story.hostId?.name || 'Host storyteller'}</p>
-                    <p className="text-xs text-slate-500">{story.readTimeMinutes || 6} min read</p>
+                    <p className="text-sm font-semibold text-slate-900">{story.hostId?.name || t('story_host_storyteller')}</p>
+                    <p className="text-xs text-slate-500">{story.readTimeMinutes || 6} {t('story_min_read')}</p>
                   </div>
                 </div>
                 {story.locationLabel ? <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#0f2d1a]">{story.locationLabel}</span> : null}
@@ -94,7 +96,7 @@ export default function StoryDetailPage() {
                     ) : null}
 
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00AA6C]">Section {index + 1}</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00AA6C]">{t('story_section')} {index + 1}</p>
                       <h2 className="mt-3 font-clash text-3xl font-bold leading-tight text-[#0f2d1a]">{section.heading}</h2>
                       <div className="mt-5 whitespace-pre-line text-[16px] leading-8 text-slate-700">{section.body}</div>
                     </div>

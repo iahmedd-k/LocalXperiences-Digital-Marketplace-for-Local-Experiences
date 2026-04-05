@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { Link } from "react-router-dom";
 import { formatPrice } from "../../utils/formatters.js";
 
@@ -9,6 +10,7 @@ export default function ExperienceCard({
   bottomMeta = null,
   className = "",
 }) {
+  const { t } = useTranslation();
   const id = experience?._id || experience?.id;
   const image = experience?.photos?.[0] || experience?.img || "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=900&q=80";
   const rating = Number(experience?.rating?.average || experience?.rating || 0);
@@ -34,7 +36,7 @@ export default function ExperienceCard({
             disabled={saving}
             className="absolute top-3 right-3 flex items-center justify-center rounded-full bg-white/90 border-none cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,.15)]"
             style={{ width: 34, height: 34, transform: saved ? "scale(1.15)" : "scale(1)", opacity: saving ? 0.6 : 1 }}
-            aria-label="Save to wishlist"
+            aria-label={t("card_save")}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill={saved ? "#ef4444" : "none"} stroke={saved ? "#ef4444" : "#374151"} strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
@@ -56,7 +58,7 @@ export default function ExperienceCard({
           <span className="text-sm text-slate-600">({reviews})</span>
         </div>
         <div className="mt-auto pt-2">
-          {typeof price === "number" ? <p className="text-[1rem] font-semibold text-[#0f2d1a]">from <span className="font-extrabold">{formatPrice(price)}</span> per adult</p> : <p className="text-xs text-slate-500">{experience?.location?.city || "Location pending"}</p>}
+          {typeof price === "number" ? <p className="text-[1rem] font-semibold text-[#0f2d1a]">{t("from")}<span className="font-extrabold">{formatPrice(price)}</span>{t("per_adult")}</p> : <p className="text-xs text-slate-500">{experience?.location?.city || "Location pending"}</p>}
           {bottomMeta ? <div className="mt-2">{bottomMeta}</div> : null}
         </div>
       </div>

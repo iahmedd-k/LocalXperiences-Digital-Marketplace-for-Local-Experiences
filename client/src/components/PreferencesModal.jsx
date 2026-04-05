@@ -1,7 +1,9 @@
+import useTranslation from '../hooks/useTranslation.js';
 import { useEffect, useRef, useState } from "react";
 import { useCurrency, CURRENCIES } from "./Currencycontext";
 
 const REGIONS = [
+  { country: "China",             code: "zh", label: "简体中文",    icon: "🇨🇳" },
   { country: "United States",     code: "en", label: "English",    icon: "🇺🇸" },
   { country: "Argentina",         code: "es", label: "Español",    icon: "🇦🇷" },
   { country: "Australia",         code: "en", label: "English",    icon: "🇦🇺" },
@@ -45,6 +47,7 @@ const REGIONS = [
 ];
 
 export function PreferencesModal({ isOpen, onClose }) {
+  const { t } = useTranslation();
   const { currency, setCurrency, language, setLanguage } = useCurrency();
 
   const [tab, setTab] = useState("region");
@@ -101,9 +104,7 @@ export function PreferencesModal({ isOpen, onClose }) {
         {/* Header */}
         <div style={{ padding: "22px 28px 0", borderBottom: "1px solid #f1f5f9", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: "1.1rem", color: "#0f2d1a", margin: 0 }}>
-              Preferences
-            </h2>
+            <h2 style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: "1.1rem", color: "#0f2d1a", margin: 0 }}>{t("nav_preferences")}</h2>
             <button
               onClick={onClose}
               style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid #e2e8f0", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
@@ -115,19 +116,19 @@ export function PreferencesModal({ isOpen, onClose }) {
             </button>
           </div>
           <div style={{ display: "flex" }}>
-            {[{ key: "region", label: "Region and Language" }, { key: "currency", label: "Currency" }].map((t) => (
+            {[{ key: "region", label: "Region and Language" }, { key: "currency", label: "Currency" }].map((item) => (
               <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
+                key={item.key}
+                onClick={() => setTab(item.key)}
                 style={{
                   padding: "9px 16px", background: "none", border: "none", cursor: "pointer",
                   fontFamily: "'Poppins',sans-serif", fontSize: ".82rem", fontWeight: 600,
-                  color: tab === t.key ? "#0f2d1a" : "#94a3b8",
-                  borderBottom: tab === t.key ? "2px solid #0f2d1a" : "2px solid transparent",
+                  color: tab === item.key ? "#0f2d1a" : "#94a3b8",
+                  borderBottom: tab === item.key ? "2px solid #0f2d1a" : "2px solid transparent",
                   marginBottom: -1, transition: "all .15s",
                 }}
               >
-                {t.label}
+                {item.label}
               </button>
             ))}
           </div>

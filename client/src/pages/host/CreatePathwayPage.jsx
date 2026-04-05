@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
@@ -27,6 +28,8 @@ const EMPTY_STOP = {
 }
 
 const CreatePathwayPage = () => {
+  const { t } = useTranslation();
+
   const navigate = useNavigate()
   const { user } = useSelector((s) => s.auth)
   const [step, setStep] = useState(0)
@@ -151,7 +154,7 @@ const CreatePathwayPage = () => {
       <div className="max-w-3xl mx-auto w-full px-4 py-10">
         <div className="mb-8">
           <Link to="/host/pathways" className="text-sm text-emerald-500 hover:underline">← Cancel & Return to Dashboad</Link>
-          <h1 className="font-clash text-3xl font-bold text-gray-900 mt-2">Create New Pathway</h1>
+          <h1 className="text-xl font-semibold text-gray-900 mt-2">Create New Pathway</h1>
         </div>
 
         {/* Wizard Steps indicator */}
@@ -161,14 +164,17 @@ const CreatePathwayPage = () => {
               <button
                 type="button"
                 onClick={() => i < step && setStep(i)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition
-                  \${i === step ? 'bg-emerald-500 text-white'
-                  : i < step   ? 'bg-green-100 text-green-700 cursor-pointer'
-                  :               'bg-gray-100 text-gray-400 cursor-default'}`}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition ${
+                  i === step
+                    ? 'bg-emerald-500 text-white'
+                    : i < step
+                      ? 'bg-green-100 text-green-700 cursor-pointer'
+                      : 'bg-gray-100 text-gray-400 cursor-default'
+                }`}
               >
                 {i < step ? '✓' : i + 1} {s}
               </button>
-              {i < STEPS.length - 1 && <div className={`h-px w-6 \${i < step ? 'bg-green-300' : 'bg-gray-200'}`}/>}
+              {i < STEPS.length - 1 && <div className={`h-px w-6 ${i < step ? 'bg-green-300' : 'bg-gray-200'}`}/>}
             </div>
           ))}
         </div>
@@ -177,7 +183,7 @@ const CreatePathwayPage = () => {
           {/* STEP 0: BASICS */}
           {step === 0 && (
              <div className="flex flex-col gap-4">
-              <h2 className="font-clash text-xl font-bold text-gray-900">Pathway Basics</h2>
+              <h2 className="text-base font-semibold text-gray-900">Pathway Basics</h2>
               <Input label="Journey Title *" error={errors.title} value={form.title} maxLength={MAX_TITLE_LENGTH} onChange={(e) => set('title', e.target.value)}
                 placeholder="e.g. A Weekend in the Old Quarter" />
               
@@ -209,12 +215,12 @@ const CreatePathwayPage = () => {
           {/* STEP 1: DETAILS */}
           {step === 1 && (
              <div className="flex flex-col gap-4">
-               <h2 className="font-clash text-xl font-bold text-gray-900">Journey Details</h2>
+               <h2 className="text-base font-semibold text-gray-900">Journey Details</h2>
                <div className="flex flex-col gap-1">
                 <label className="text-sm font-semibold text-gray-700">Summary Description *</label>
                 <textarea rows={5} value={form.description} maxLength={MAX_DESCRIPTION_LENGTH} onChange={(e) => set('description', e.target.value)}
                   placeholder="What is this pathway about? Why should guests take this journey?"
-                  className={`border rounded-lg px-4 py-3 text-sm outline-none focus:border-emerald-400 resize-none \${errors.description ? 'border-rose-300 bg-rose-50/30' : 'border-gray-200'}`}/>
+                  className={`border rounded-lg px-4 py-3 text-sm outline-none focus:border-emerald-400 resize-none ${errors.description ? 'border-rose-300 bg-rose-50/30' : 'border-gray-200'}`}/>
                 {errors.description && <p className="text-xs text-rose-600">{errors.description}</p>}
               </div>
 
@@ -227,7 +233,7 @@ const CreatePathwayPage = () => {
               </div>
 
               <div className="mt-6 flex justify-between">
-                <Button variant="secondary" onClick={() => setStep(0)}>Back</Button>
+                <Button variant="secondary" onClick={() => setStep(0)}>{t("checkout_back")}</Button>
                 <Button onClick={() => validateStep(1) && setStep(2)}>Next: Stops</Button>
               </div>
              </div>
@@ -236,7 +242,7 @@ const CreatePathwayPage = () => {
           {/* STEP 2: STOPS */}
           {step === 2 && (
              <div className="flex flex-col gap-4">
-               <h2 className="font-clash text-xl font-bold text-gray-900">Journey Stops</h2>
+               <h2 className="text-base font-semibold text-gray-900">Journey Stops</h2>
                <p className="text-sm text-gray-500">Pick experiences to string together into a multi-stop journey.</p>
                {errors.stops && <p className="text-xs text-rose-600 bg-rose-50 p-2 rounded">{errors.stops}</p>}
 
@@ -280,7 +286,7 @@ const CreatePathwayPage = () => {
                {/* Current Stops Display */}
                {form.stops.length > 0 && (
                  <div className="space-y-4">
-                   <h3 className="font-bold text-slate-800">Your Pathway:</h3>
+                   <h3 className="font-semibold text-slate-800">Your Pathway:</h3>
                    {form.stops.map((stop, i) => {
                      const exp = myExperiences.find(e => e._id === stop.experienceId)
                      return (
@@ -305,7 +311,7 @@ const CreatePathwayPage = () => {
                )}
 
                <div className="mt-6 flex justify-between">
-                <Button variant="secondary" onClick={() => setStep(1)}>Back</Button>
+                <Button variant="secondary" onClick={() => setStep(1)}>{t("checkout_back")}</Button>
                 <Button onClick={() => validateStep(2) && setStep(3)}>Review & Publish</Button>
               </div>
              </div>
@@ -314,7 +320,7 @@ const CreatePathwayPage = () => {
           {/* STEP 3: REVIEW */}
           {step === 3 && (
              <div className="flex flex-col gap-4">
-               <h2 className="font-clash text-xl font-bold text-gray-900">Review & Publish</h2>
+               <h2 className="text-base font-semibold text-gray-900">Review & Publish</h2>
                <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl border border-emerald-200 text-sm mb-4">
                  Your pathway contains {form.stops.length} stops in {form.city}. Ready to launch?
                </div>
@@ -330,7 +336,7 @@ const CreatePathwayPage = () => {
                </div>
 
                <div className="mt-6 flex justify-between">
-                 <Button variant="secondary" onClick={() => setStep(2)}>Back</Button>
+                 <Button variant="secondary" onClick={() => setStep(2)}>{t("checkout_back")}</Button>
                  <Button onClick={handleSubmit} disabled={loading}>{loading ? 'Saving...' : 'Publish Pathway'}</Button>
                </div>
              </div>

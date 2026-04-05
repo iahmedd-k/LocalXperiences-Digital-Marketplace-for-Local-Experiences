@@ -1,3 +1,4 @@
+import useTranslation from '../../hooks/useTranslation.js';
 import { useState }        from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link }            from 'react-router-dom'
@@ -14,6 +15,8 @@ import Button              from '../../components/common/Button.jsx'
 import { formatDate }      from '../../utils/formatters.js'
 
 const HostReviewsPage = () => {
+  const { t } = useTranslation();
+
   const queryClient = useQueryClient()
   const [replyOpen,  setReplyOpen]  = useState(null)  // review _id
   const [replyText,  setReplyText]  = useState('')
@@ -65,17 +68,17 @@ const HostReviewsPage = () => {
         {/* Header */}
         <div className="mb-6">
           <Link to="/host/dashboard" className="text-xs text-emerald-600 hover:underline">← Dashboard</Link>
-          <h1 className="font-clash text-xl font-bold text-gray-900 mt-1">Reviews</h1>
+          <h1 className="text-lg font-semibold text-gray-900 mt-1">{t("dashboard_reviews")}</h1>
         </div>
 
         {isLoading ? <Spinner size="lg" className="py-16"/> : reviews.length === 0 ? (
-          <EmptyState icon="Rating" title="No reviews yet" description="Reviews from guests will appear here after their experience." />
+          <EmptyState icon={t("search_rating")} title="No reviews yet" description="Reviews from guests will appear here after their experience." />
         ) : (
           <>
             {/* Rating summary */}
             <div className="bg-white border border-gray-100 rounded-xl p-4 mb-6 flex flex-col sm:flex-row gap-6 items-center">
               <div className="text-center">
-                <p className="font-clash text-4xl font-bold text-gray-900">{avgRating}</p>
+                <p className="text-3xl font-semibold text-gray-900">{avgRating}</p>
                 <StarRating rating={Number(avgRating)} size="sm" />
                 <p className="text-xs text-gray-400 mt-1">{reviews.length} reviews</p>
               </div>
@@ -96,13 +99,13 @@ const HostReviewsPage = () => {
               {/* Stats */}
               <div className="flex flex-col gap-3 text-center sm:border-l sm:border-gray-100 sm:pl-6">
                 <div>
-                  <p className="text-xl font-bold text-green-500">
+                  <p className="text-lg font-semibold text-green-500">
                     {reviews.filter((r) => r.hostReply?.text).length}
                   </p>
                   <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Replied</p>
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-yellow-500">
+                  <p className="text-lg font-semibold text-yellow-500">
                     {reviews.filter((r) => !r.hostReply?.text).length}
                   </p>
                   <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Awaiting</p>

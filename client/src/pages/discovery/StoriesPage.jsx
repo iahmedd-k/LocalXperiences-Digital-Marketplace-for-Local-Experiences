@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState, useEffect, useRef } from 'react'
 import Navbar from '../../components/Navbar.jsx'
 import Footer from '../../components/Footer.jsx'
+import useTranslation from '../../hooks/useTranslation.js';
 import { getStories } from '../../services/storyService.js'
 
 const CATEGORY_COLORS = {
@@ -37,7 +38,7 @@ const SkeletonCard = () => (
   </div>
 )
 
-function StoryCard({ story, compact = false }) {
+function StoryCard({ story, compact = false, t }) {
   return (
     <Link
       to={`/stories/${story.slug}`}
@@ -51,7 +52,7 @@ function StoryCard({ story, compact = false }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
         <span className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider shadow-sm ${categoryClass(story.category)}`}>
-          {story.category || 'Story'}
+          {story.category || t('stories_category')}
         </span>
       </div>
 
@@ -70,16 +71,16 @@ function StoryCard({ story, compact = false }) {
             <div className="flex h-[26px] w-[26px] items-center justify-center rounded-full bg-[#EAF8F2] text-[0.7rem] font-bold text-[#00AA6C]">
               {(story.hostId?.name || 'H')[0].toUpperCase()}
             </div>
-            <span className="text-[0.75rem] font-semibold text-slate-700">{story.hostId?.name || 'Host storyteller'}</span>
+            <span className="text-[0.75rem] font-semibold text-slate-700">{story.hostId?.name || t('stories_host')}</span>
           </div>
-          <span className="text-[0.7rem] text-slate-400">{story.readTimeMinutes || 6} min read</span>
+          <span className="text-[0.7rem] text-slate-400">{story.readTimeMinutes || 6} {t('story_min_read')}</span>
         </div>
       </div>
     </Link>
   )
 }
 
-function HeroSlider({ stories }) {
+function HeroSlider({ stories, t }) {
   const [current, setCurrent] = useState(0)
   const timerRef = useRef(null)
   const slides = stories.slice(0, 6)
@@ -113,7 +114,7 @@ function HeroSlider({ stories }) {
       <button
         onClick={() => go(current - 1)}
         className="absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow-md transition hover:bg-white"
-        aria-label="Previous"
+        aria-label={t("stories_previous")}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2.2" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
@@ -121,7 +122,7 @@ function HeroSlider({ stories }) {
       <button
         onClick={() => go(current + 1)}
         className="absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow-md transition hover:bg-white"
-        aria-label="Next"
+        aria-label={t("stories_next")}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2.2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </button>
@@ -144,7 +145,7 @@ function HeroSlider({ stories }) {
           to={`/stories/${story.slug}`}
           className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-[.8rem] font-bold text-[#0f2d1a] no-underline"
         >
-          Read more
+          {t('stories_read_more')}
         </Link>
       </div>
 
@@ -170,7 +171,7 @@ function HeroSlider({ stories }) {
   )
 }
 
-function TravelYourWay({ stories }) {
+function TravelYourWay({ stories, t }) {
   const scrollRef = useRef(null)
   const cards = stories.slice(0, 8)
 
@@ -185,16 +186,16 @@ function TravelYourWay({ stories }) {
       <div className="mb-5 flex items-end justify-between">
         <div>
           <h2 style={{ fontFamily: "'Georgia', serif", fontSize: '1.35rem', fontWeight: 700, color: '#0f2d1a', margin: 0 }}>
-            Travel your way
+            {t('stories_travel_way')}
           </h2>
           <p className="mt-1 text-[.82rem] text-slate-500">
-            Guides to match your crew, your passions, and your pace
+            {t('stories_guides')}
           </p>
         </div>
         <button
           onClick={() => scroll(1)}
           className="hidden h-[38px] w-[38px] items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 sm:flex"
-          aria-label="Scroll right"
+          aria-label={t('stories_scroll')}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2.2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
         </button>
@@ -208,7 +209,7 @@ function TravelYourWay({ stories }) {
         >
           {cards.map((story) => (
             <div key={story._id} className="shrink-0" style={{ width: 280 }}>
-              <StoryCard story={story} compact />
+              <StoryCard story={story} compact t={t} />
             </div>
           ))}
         </div>
@@ -220,6 +221,7 @@ function TravelYourWay({ stories }) {
 }
 
 export default function StoriesPage() {
+  const { t } = useTranslation()
   const { data: stories = [], isLoading } = useQuery({
     queryKey: ['stories'],
     queryFn: () => getStories({ limit: 24 }).then((res) => res.data.data || []),
@@ -241,34 +243,34 @@ export default function StoriesPage() {
           </div>
         ) : !stories.length ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-8 py-20 text-center">
-            <h2 style={{ fontFamily: "'Georgia', serif", fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>No stories published yet</h2>
-            <p className="mt-2 text-[.82rem] text-slate-500">The first host stories will appear here once they are published.</p>
+            <h2 style={{ fontFamily: "'Georgia', serif", fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>{t('stories_empty_title')}</h2>
+            <p className="mt-2 text-[.82rem] text-slate-500">{t('stories_empty_sub')}</p>
           </div>
         ) : (
           <>
             <div className="mb-2">
               <div className="mb-4 flex items-center gap-2">
                 <span style={{ width: 3, height: 18, borderRadius: 100, background: '#00AA6C', display: 'inline-block' }} />
-                <h2 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: '1rem', color: '#0f2d1a', margin: 0 }}>Featured Stories</h2>
+                <h2 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: '1rem', color: '#0f2d1a', margin: 0 }}>{t('stories_featured')}</h2>
               </div>
-              <HeroSlider stories={stories} />
+              <HeroSlider stories={stories} t={t} />
             </div>
 
-            <TravelYourWay stories={stories} />
+            <TravelYourWay stories={stories} t={t} />
 
             {gridStories.length > 0 ? (
               <section className="mt-14">
                 <div className="mb-6 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span style={{ width: 3, height: 18, borderRadius: 100, background: '#00AA6C', display: 'inline-block' }} />
-                    <h2 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: '1rem', color: '#0f2d1a', margin: 0 }}>All Stories</h2>
+                    <h2 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: '1rem', color: '#0f2d1a', margin: 0 }}>{t('stories_all')}</h2>
                   </div>
-                  <span className="text-[.72rem] text-slate-400">{gridStories.length} stories</span>
+                  <span className="text-[.72rem] text-slate-400">{gridStories.length} {t('stories_count_suffix')}</span>
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                   {gridStories.map((story) => (
-                    <StoryCard key={story._id} story={story} />
+                    <StoryCard key={story._id} story={story} t={t} />
                   ))}
                 </div>
               </section>
@@ -278,19 +280,17 @@ export default function StoriesPage() {
               <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#EAF8F2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00AA6C" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
               </div>
-              <h3 style={{ fontFamily: "'Georgia', serif", fontSize: '1.15rem', fontWeight: 700, color: '#0f2d1a' }}>Never miss a new story</h3>
-              <p className="mt-1.5 text-[.8rem] text-slate-500">Get the latest host stories and travel editorials in your inbox.</p>
+              <h3 style={{ fontFamily: "'Georgia', serif", fontSize: '1.15rem', fontWeight: 700, color: '#0f2d1a' }}>{t('stories_never_miss')}</h3>
+              <p className="mt-1.5 text-[.8rem] text-slate-500">{t('stories_inbox')}</p>
               <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <input
                   type="email"
-                  placeholder="Your email address"
+                  placeholder={t('stories_email_placeholder')}
                   style={{ borderRadius: 100, border: '1px solid #e2e8f0', padding: '9px 18px', fontSize: '.8rem', outline: 'none', width: 260 }}
                 />
-                <button style={{ borderRadius: 100, background: '#0f2d1a', color: '#fff', padding: '9px 22px', fontSize: '.8rem', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
-                  Subscribe
-                </button>
+                <button style={{ borderRadius: 100, background: '#0f2d1a', color: '#fff', padding: '9px 22px', fontSize: '.8rem', fontWeight: 700, border: 'none', cursor: 'pointer' }}>{t("footer_subscribe")}</button>
               </div>
-              <p className="mt-2.5 text-[.68rem] text-slate-400">No spam. Unsubscribe anytime.</p>
+              <p className="mt-2.5 text-[.68rem] text-slate-400">{t('stories_no_spam')}</p>
             </div>
           </>
         )}

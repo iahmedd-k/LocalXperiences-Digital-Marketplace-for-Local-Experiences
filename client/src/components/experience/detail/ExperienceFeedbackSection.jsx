@@ -1,3 +1,4 @@
+import useTranslation from '../../../hooks/useTranslation.js';
 import { ChevronDown, CircleHelp, Filter, Search, ThumbsUp, X } from 'lucide-react'
 import Avatar from '../../common/Avatar.jsx'
 import Button from '../../common/Button.jsx'
@@ -107,6 +108,7 @@ export default function ExperienceFeedbackSection({
   onApplyReviewFilters,
   onResetReviewFilters,
 }) {
+  const { t } = useTranslation();
   const popularMentions = getPopularMentions(reviews)
   const ratingFilterOptions = reviewDistribution
     .filter((item) => item.stars >= 1)
@@ -119,30 +121,24 @@ export default function ExperienceFeedbackSection({
   return (
     <section id="reviews" className="scroll-mt-36 px-1 pt-2 sm:px-2 lg:px-0">
       <div className="mb-10">
-        <p className="text-sm font-semibold text-slate-900">Contribute</p>
+        <p className="text-sm font-semibold text-slate-900">{t("feedback_contribute")}</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button
             type="button"
             onClick={() => onOpenReviewComposer(false)}
             className="rounded-full border border-emerald-900 px-4 py-2.5 text-sm font-medium text-emerald-950 transition hover:bg-emerald-50"
-          >
-            Write a review
-          </button>
+          >{t("feedback_write_review")}</button>
           <button
             type="button"
             onClick={() => onOpenReviewComposer(true)}
             className="rounded-full border border-emerald-900 px-4 py-2.5 text-sm font-medium text-emerald-950 transition hover:bg-emerald-50"
-          >
-            Upload a photo
-          </button>
+          >{t("feedback_upload_photo")}</button>
         </div>
       </div>
 
       <div className="mb-10 border-b border-slate-200">
         <div className="flex items-center gap-9">
-        <button type="button" onClick={() => setGuestFeedbackTab('reviews')} className={tabClassName(guestFeedbackTab === 'reviews')}>
-          Reviews
-        </button>
+        <button type="button" onClick={() => setGuestFeedbackTab('reviews')} className={tabClassName(guestFeedbackTab === 'reviews')}>{t("dashboard_reviews")}</button>
         <button type="button" onClick={() => setGuestFeedbackTab('qna')} className={tabClassName(guestFeedbackTab === 'qna')}>
           Q&amp;A
         </button>
@@ -597,7 +593,7 @@ export default function ExperienceFeedbackSection({
           <div className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl sm:p-7">
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
-                <h3 className="text-[22px] font-semibold text-slate-900">Write a review</h3>
+                <h3 className="text-[22px] font-semibold text-slate-900">{t("feedback_write_review")}</h3>
                 <p className="mt-1 text-sm text-slate-500">{reviewCallout}</p>
               </div>
               <button

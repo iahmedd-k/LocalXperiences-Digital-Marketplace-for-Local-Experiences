@@ -281,6 +281,103 @@ const parseBoolean = (value, fallback) => {
   return fallback;
 };
 
+const DEFAULT_LANGUAGE = 'en';
+
+const normalizeRequestedLanguage = (value = DEFAULT_LANGUAGE) => {
+  const normalized = String(value || DEFAULT_LANGUAGE).split(',')[0].trim().toLowerCase();
+  return normalized || DEFAULT_LANGUAGE;
+};
+
+const getLanguageCandidates = (value = DEFAULT_LANGUAGE) => {
+  const normalized = normalizeRequestedLanguage(value);
+  const base = normalized.split('-')[0];
+  return [...new Set([normalized, base].filter(Boolean))];
+};
+
+const isEnglishLanguage = (value = DEFAULT_LANGUAGE) => getLanguageCandidates(value).includes(DEFAULT_LANGUAGE);
+
+const findStoredExperienceTranslation = (translations = [], requestedLanguage = DEFAULT_LANGUAGE) => {
+  if (!Array.isArray(translations) || !translations.length) return null;
+
+  const candidates = getLanguageCandidates(requestedLanguage);
+  return translations.find((item) => candidates.includes(String(item?.languageCode || '').trim().toLowerCase())) || null;
+};
+
+const applyExperienceTranslation = (experience, translation) => {
+  if (!translation) return experience;
+
+  return {
+    ...experience,
+    title: translation.title || experience.title,
+    description: translation.description || experience.description,
+    detailsSections: {
+      ...(experience.detailsSections || {}),
+      whatToExpect: translation.whatToExpect || experience.detailsSections?.whatToExpect || '',
+      meetingAndPickup: translation.meetingAndPickup || experience.detailsSections?.meetingAndPickup || '',
+    },
+  };
+};
+
+const persistExperienceTranslation = async (experienceDoc, requestedLanguage, translatedFields) => {
+  if (!experienceDoc?.save || !translatedFields || Object.keys(translatedFields).length === 0) return;
+
+  const candidates = getLanguageCandidates(requestedLanguage);
+  const primaryLanguage = candidates[0];
+  if (!primaryLanguage || primaryLanguage === DEFAULT_LANGUAGE) return;
+
+  const existingIndex = Array.isArray(experienceDoc.translations)
+    ? experienceDoc.translations.findIndex((item) => candidates.includes(String(item?.languageCode || '').trim().toLowerCase()))
+    : -1;
+
+  const payload = {
+    languageCode: primaryLanguage,
+    languageLabel: primaryLanguage.toUpperCase(),
+    ...translatedFields,
+  };
+
+  try {
+    if (existingIndex >= 0) {
+      Object.assign(experienceDoc.translations[existingIndex], payload);
+    } else {
+      experienceDoc.translations.push(payload);
+    }
+
+    await experienceDoc.save();
+  } catch (error) {
+    console.error('Failed to persist experience translation:', error?.message || error);
+  }
+};
+
+const resolveExperienceForLanguage = async (
+  experienceDoc,
+  requestedLanguage = DEFAULT_LANGUAGE,
+  { persistMissing = true } = {}
+) => {
+  const experience = experienceDoc?.toObject ? experienceDoc.toObject() : { ...experienceDoc };
+  if (isEnglishLanguage(requestedLanguage)) return experience;
+
+  const storedTranslation = findStoredExperienceTranslation(experience.translations, requestedLanguage);
+  if (storedTranslation) return applyExperienceTranslation(experience, storedTranslation);
+
+  const targetLanguage = getLanguageCandidates(requestedLanguage)[0];
+  const translatedFields = {
+    title: experience.title ? await translateText(experience.title, targetLanguage) : '',
+    description: experience.description ? await translateText(experience.description, targetLanguage) : '',
+    whatToExpect: experience.detailsSections?.whatToExpect
+      ? await translateText(experience.detailsSections.whatToExpect, targetLanguage)
+      : '',
+    meetingAndPickup: experience.detailsSections?.meetingAndPickup
+      ? await translateText(experience.detailsSections.meetingAndPickup, targetLanguage)
+      : '',
+  };
+
+  if (persistMissing) {
+    await persistExperienceTranslation(experienceDoc, targetLanguage, translatedFields);
+  }
+
+  return applyExperienceTranslation(experience, translatedFields);
+};
+
 // ─── @GET /api/experiences ─────────────────────────────────────────────────
 // Public — Search & filter experiences
 // Supports: keyword, category, city, minPrice, maxPrice, tags, lat, lng, radius
@@ -302,12 +399,13 @@ const getExperiences = async (req, res, next) => {
       limit   = 12,
       sort    = 'createdAt',
     } = req.query;
+    const requestedLanguage = normalizeRequestedLanguage(req.query.lang || req.headers['accept-language']);
     const userLat = Number(lat);
     const userLng = Number(lng);
     const hasUserCoords = Number.isFinite(userLat) && Number.isFinite(userLng);
 
     // Build cache key from query
-    const cacheKey = `experiences:${JSON.stringify(req.query)}`;
+    const cacheKey = `experiences:${requestedLanguage}:${JSON.stringify(req.query)}`;
     const cached   = await getCache(cacheKey);
     if (cached) return paginatedResponse(res, 'Experiences fetched', cached.data, cached.pagination);
 
@@ -392,28 +490,36 @@ const getExperiences = async (req, res, next) => {
     const total = await Experience.countDocuments(filter);
     const baseQuery = Experience
       .find(filter)
-      .populate('hostId', 'name profilePic languages')
-      .lean();
+      .populate('hostId', 'name profilePic languages');
 
-    let experiences;
+    let experienceDocs;
 
     if (hasUserCoords && sort === 'nearest') {
       const results = await baseQuery;
-      experiences = attachDistanceKm(results, userLat, userLng)
+      experienceDocs = results
         .sort((left, right) => {
-          const leftDistance = Number.isFinite(left.distanceKm) ? left.distanceKm : Number.MAX_SAFE_INTEGER;
-          const rightDistance = Number.isFinite(right.distanceKm) ? right.distanceKm : Number.MAX_SAFE_INTEGER;
+          const leftCoords = left?.location?.coordinates?.coordinates || [];
+          const rightCoords = right?.location?.coordinates?.coordinates || [];
+          const leftDistance = leftCoords.length === 2
+            ? getDistanceKm(userLat, userLng, leftCoords[1], leftCoords[0])
+            : Number.MAX_SAFE_INTEGER;
+          const rightDistance = rightCoords.length === 2
+            ? getDistanceKm(userLat, userLng, rightCoords[1], rightCoords[0])
+            : Number.MAX_SAFE_INTEGER;
           return leftDistance - rightDistance;
         })
         .slice(skip, skip + Number(limit));
     } else {
-      const results = await baseQuery
+      experienceDocs = await baseQuery
         .sort(sortOptions[sort] || { createdAt: -1 })
         .skip(skip)
         .limit(Number(limit));
-
-      experiences = hasUserCoords ? attachDistanceKm(results, userLat, userLng) : results;
     }
+
+    const localizedExperiences = await Promise.all(
+      experienceDocs.map((experience) => resolveExperienceForLanguage(experience, requestedLanguage))
+    );
+    const experiences = hasUserCoords ? attachDistanceKm(localizedExperiences, userLat, userLng) : localizedExperiences;
 
     const pagination = {
       total,
@@ -434,15 +540,19 @@ const getExperiences = async (req, res, next) => {
 // Public — Featured & trending experiences for home page
 const getFeaturedExperiences = async (req, res, next) => {
   try {
-    const cacheKey = 'experiences:featured';
+    const requestedLanguage = normalizeRequestedLanguage(req.query.lang || req.headers['accept-language']);
+    const cacheKey = `experiences:featured:${requestedLanguage}`;
     const cached   = await getCache(cacheKey);
     if (cached) return successResponse(res, 200, 'Featured experiences fetched', cached);
 
-    const featured = await Experience
+    const featuredDocs = await Experience
       .find({ isActive: true, isFeatured: true })
       .populate('hostId', 'name profilePic languages')
       .sort({ 'rating.average': -1 })
       .limit(8);
+    const featured = await Promise.all(
+      featuredDocs.map((experience) => resolveExperienceForLanguage(experience, requestedLanguage))
+    );
 
     await setCache(cacheKey, featured, 600); // 10 min cache
 
@@ -456,11 +566,10 @@ const getFeaturedExperiences = async (req, res, next) => {
 // Public — Single experience detail
 const getExperienceById = async (req, res, next) => {
   try {
-    const cacheKey = `experience:${req.params.id}`;
+    const requestedLang = normalizeRequestedLanguage(req.query.lang || req.headers['accept-language']);
+    const cacheKey = `experience:${req.params.id}:${requestedLang}`;
     const cached   = await getCache(cacheKey);
-    // Only use cache if no translation is requested
-    const requestedLang = (req.query.lang || req.headers['accept-language'] || 'en').split(',')[0].toLowerCase();
-    if (cached && (!requestedLang || requestedLang === 'en')) {
+    if (cached) {
       return successResponse(res, 200, 'Experience fetched', cached);
     }
 
@@ -472,23 +581,9 @@ const getExperienceById = async (req, res, next) => {
       return errorResponse(res, 404, 'Experience not found');
     }
 
-    let responseData = experience.toObject ? experience.toObject() : { ...experience };
+    const responseData = await resolveExperienceForLanguage(experience, requestedLang);
 
-    // On-demand translation for description
-    if (requestedLang && requestedLang !== 'en') {
-      try {
-        const translated = await translateText(responseData.description, requestedLang);
-        responseData.description = translated || responseData.description;
-      } catch (err) {
-        // Log error, but fallback to English
-        console.error('Translation failed:', err?.message || err);
-      }
-    }
-
-    // Only cache English version
-    if (!requestedLang || requestedLang === 'en') {
-      await setCache(cacheKey, responseData, 300);
-    }
+    await setCache(cacheKey, responseData, 300);
 
     return successResponse(res, 200, 'Experience fetched', responseData);
   } catch (error) {

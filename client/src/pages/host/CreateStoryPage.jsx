@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import useTranslation from '../../hooks/useTranslation.js'
 import Button from '../../components/common/Button.jsx'
 import Input from '../../components/common/Input.jsx'
 import { createStory } from '../../services/storyService.js'
@@ -15,6 +16,7 @@ const EMPTY_SECTION = {
 }
 
 export default function CreateStoryPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [coverImage, setCoverImage] = useState(null)
@@ -97,13 +99,13 @@ export default function CreateStoryPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f5f1e8]">
+    <div className="min-h-screen flex flex-col bg-slate-50">
       
       <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="mb-6">
             <Link to="/host/dashboard" className="text-sm text-emerald-700 hover:underline">← Dashboard</Link>
-            <h1 className="mt-2 font-clash text-4xl font-bold text-slate-900">Create a host story</h1>
+            <h1 className="mt-2 text-xl font-semibold text-slate-900">Create a host story</h1>
             <p className="mt-2 text-sm leading-7 text-slate-600">Upload a cover image, add story sections, choose image positions, and publish a real editorial-style story readers can browse.</p>
           </div>
 
@@ -111,7 +113,7 @@ export default function CreateStoryPage() {
             <section className="rounded-[28px] border border-[#d9cfbf] bg-white p-6 shadow-sm sm:p-8">
               <div className="grid gap-4 md:grid-cols-2">
                 <Input label="Story title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Three slow days through Lahore's old neighborhoods" />
-                <Input label="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Road Trip Story" />
+                <Input label={t("search_category")} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Road Trip Story" />
                 <Input label="Location label" value={form.locationLabel} onChange={(e) => setForm({ ...form, locationLabel: e.target.value })} placeholder="Lahore, Pakistan" />
                 <Input label="Read time (minutes)" type="number" value={form.readTimeMinutes} onChange={(e) => setForm({ ...form, readTimeMinutes: Number(e.target.value) || 6 })} />
                 <Input label="Cover image alt text" value={form.coverImageAlt} onChange={(e) => setForm({ ...form, coverImageAlt: e.target.value })} placeholder="Sunset over the old city rooftops" />
@@ -131,7 +133,7 @@ export default function CreateStoryPage() {
             {form.sections.map((section, index) => (
               <section key={index} className="rounded-[28px] border border-[#d9cfbf] bg-white p-6 shadow-sm sm:p-8">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="font-clash text-2xl font-bold text-slate-900">Section {index + 1}</h2>
+                  <h2 className="text-lg font-semibold text-slate-900">Section {index + 1}</h2>
                   {form.sections.length > 1 ? (
                     <button type="button" onClick={() => removeSection(index)} className="text-sm font-semibold text-rose-600">Remove</button>
                   ) : null}

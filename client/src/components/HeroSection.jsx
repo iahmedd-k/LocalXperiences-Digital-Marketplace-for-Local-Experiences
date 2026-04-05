@@ -4,7 +4,7 @@ import { motion as Motion } from "framer-motion";
 import { SLIDES } from "../homeData.js";
 import { ANIMATION_EASE, ANIMATION_TIMINGS } from "../config/constants.js";
 import useGeolocation from "../hooks/useGeolocation.js";
-import useTranslation from "../hooks/useTranslation.js";
+import useTranslation from '../hooks/useTranslation.js';
 
 const heroFlow = {
   hidden: { opacity: 0, y: 24 },

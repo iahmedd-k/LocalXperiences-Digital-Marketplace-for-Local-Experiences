@@ -167,7 +167,7 @@ export default function PathwayManagementPage() {
         <div className="mx-auto max-w-5xl">
           <div className="mb-6">
             <Link to="/host/dashboard" className="text-xs text-emerald-500 hover:underline">← Dashboard</Link>
-            <h1 className="font-clash text-xl font-bold text-gray-900 mt-1">Manage Pathways</h1>
+            <h1 className="text-lg font-semibold text-gray-900 mt-1">Manage Pathways</h1>
             <p className="text-xs text-slate-500">Create beautiful multi-experience journeys for your guests.</p>
           </div>
           <div className="mb-8 flex items-center justify-end">
@@ -230,7 +230,7 @@ export default function PathwayManagementPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto">
           <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl relative my-8">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 sticky top-0 bg-white z-10 rounded-t-2xl">
-              <h2 className="text-base font-bold text-slate-900 font-clash">{editingId ? 'Edit Pathway' : 'Create Pathway'}</h2>
+              <h2 className="text-base font-semibold text-slate-900">{editingId ? 'Edit Pathway' : 'Create Pathway'}</h2>
               <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">✕</button>
             </div>
             
@@ -267,7 +267,7 @@ export default function PathwayManagementPage() {
               </div>
 
               <div className="pt-4 border-t border-slate-100">
-                <h3 className="text-sm font-bold text-slate-900 mb-3 font-clash">Journey Stops *</h3>
+                <h3 className="text-sm font-semibold text-slate-900 mb-3">Journey Stops *</h3>
                 
                 <div className="mb-3">
                   <select onChange={handleAddStop} className="w-full rounded-lg border border-slate-200 p-2 text-sm outline-none focus:border-emerald-500 bg-white">
