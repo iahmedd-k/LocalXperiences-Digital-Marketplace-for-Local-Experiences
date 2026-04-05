@@ -30,10 +30,28 @@ const api = axios.create({
   withCredentials: false,
 })
 
+const isPublicGetRequest = (config) => {
+  const method = String(config?.method || 'get').toUpperCase()
+  const url = String(config?.url || '')
+
+  if (method !== 'GET') return false
+
+  return [
+    '/experiences',
+    '/recommendations',
+    '/pathways',
+    '/currency',
+    '/hosts',
+    '/stories',
+  ].some((prefix) => url.startsWith(prefix))
+}
+
 // Attach JWT and Language on every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
+  if (token && !isPublicGetRequest(config)) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
 
   try {
     const langObj = JSON.parse(localStorage.getItem('lx_language'))
