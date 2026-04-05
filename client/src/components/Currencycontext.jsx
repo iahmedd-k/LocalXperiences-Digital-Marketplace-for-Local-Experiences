@@ -155,14 +155,6 @@ export function CurrencyProvider({ children }) {
   });
 
   useEffect(() => {
-    fetchExchangeRates("USD").then(rates => {
-      if (rates) {
-        localStorage.setItem("lx_exchange_rates", JSON.stringify(rates));
-      }
-    }).catch(err => console.error("Failed to load exchange rates", err));
-  }, []);
-
-  useEffect(() => {
     document.documentElement.lang = language?.code || "en";
   }, [language]);
 

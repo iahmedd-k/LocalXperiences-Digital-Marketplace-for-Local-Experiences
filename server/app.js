@@ -7,6 +7,20 @@ const { globalRateLimiter }      = require('./middleware/rateLimiter');
 require('dotenv').config();
 
 const app = express();
+const parseTrustProxy = (value) => {
+  if (value == null || value === '') {
+    return process.env.NODE_ENV === 'production' ? 1 : false;
+  }
+
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+
+  const asNumber = Number.parseInt(value, 10);
+  return Number.isNaN(asNumber) ? value : asNumber;
+};
+const trustProxy = parseTrustProxy(process.env.TRUST_PROXY);
+
+app.set('trust proxy', trustProxy);
 
 // Security Middleware
 app.use(helmet());
