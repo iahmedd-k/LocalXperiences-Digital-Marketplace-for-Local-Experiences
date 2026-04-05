@@ -39,8 +39,7 @@ app.use(express.urlencoded({ extended: true }));
 // Passport
 app.use(passport.initialize());
 
-// Rate Limiting
-app.use('/api', globalRateLimiter);
+// Rate Limiting removed for development
 
 // Health Check
 app.get('/health', (req, res) => {
